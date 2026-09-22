@@ -1,0 +1,25 @@
+{
+  "name": "agrisphere",
+  "version": "1.0.0",
+  "description": "AgriSphere - Smart Farming. Better Decisions. Digital platform for farmers.",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix client\" \"npm run dev --prefix server\"",
+    "client": "npm run dev --prefix client",
+    "server": "npm run dev --prefix server",
+    "build:client": "npm run build --prefix client",
+    "install:all": "npm install --prefix client && npm install --prefix server"
+  },
+  "keywords": [
+    "agriculture",
+    "farming",
+    "react",
+    "vite",
+    "express",
+    "supabase",
+    "tailwindcss"
+  ],
+  "author": "AgriSphere Team (Suhas S Pai, Sharayu, Shravya)",
+  "license": "ISC"
+}
+
