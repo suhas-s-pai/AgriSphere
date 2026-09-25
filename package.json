@@ -20,6 +20,8 @@
     "tailwindcss"
   ],
   "author": "AgriSphere Team (Suhas S Pai, Sharayu, Shravya)",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
 }
-

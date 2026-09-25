@@ -52,3 +52,4 @@ ON public.market_information FOR SELECT USING (true);
 CREATE POLICY "Knowledge articles viewable by everyone" 
 ON public.knowledge_articles FOR SELECT USING (true);
 
+
