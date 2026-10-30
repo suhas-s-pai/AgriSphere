@@ -15,6 +15,7 @@ import KnowledgePage from './pages/knowledge/KnowledgePage.jsx';
 import FarmPage from './pages/farm/FarmPage.jsx';
 import NotificationsPage from './pages/notifications/NotificationsPage.jsx';
 import HelpPage from './pages/help/HelpPage.jsx';
+import ChatbotPage from './pages/chatbot/ChatbotPage.jsx';
 
 function App() {
   return (
@@ -27,13 +28,17 @@ function App() {
           <Route path="weather" element={<WeatherPage />} />
           <Route path="market-prices" element={<MarketPage />} />
           <Route path="farming-tools" element={<ToolsPage />} />
+          <Route path="tools-maps" element={<ToolsPage />} />
           <Route path="diseases-pests" element={<DiseasesPage />} />
           <Route path="soil-fertilizers" element={<SoilPage />} />
           <Route path="government-schemes" element={<SchemesPage />} />
           <Route path="marketplace" element={<MarketplacePage />} />
           <Route path="maps-nearby" element={<MapsPage />} />
+          <Route path="maps" element={<MapsPage />} />
           <Route path="knowledge-hub" element={<KnowledgePage />} />
           <Route path="my-farm" element={<FarmPage />} />
+          <Route path="farm" element={<FarmPage />} />
+          <Route path="ai-chatbot" element={<ChatbotPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="help-support" element={<HelpPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -44,4 +49,3 @@ function App() {
 }
 
 export default App;
-

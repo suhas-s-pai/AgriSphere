@@ -1,56 +1,82 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { ArrowRight, Sprout, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Sprout, Calendar, Droplets, Bell, MapPin, Sparkles } from 'lucide-react';
 
-const HeroBanner = () => (
-  <div className="relative min-h-[420px] overflow-hidden rounded-[2rem] bg-slate-950 shadow-[0_24px_70px_rgba(15,23,42,0.16)] sm:min-h-[480px] lg:min-h-[530px]">
-    <img
-      src="/assets/Farmer.png"
-      alt="Farmer working in an agricultural field"
-      className="absolute inset-0 h-full w-full object-cover object-center"
-    />
-    <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/65 to-slate-950/10" />
-    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-transparent to-transparent" />
+const HeroBanner = () => {
+  return (
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-agri-950 via-agri-900 to-agri-800 text-white shadow-md border border-agri-700/50">
+      {/* Background patterns */}
+      <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
+      <div className="absolute -right-20 -bottom-20 w-96 h-96 bg-agri-500/20 rounded-full blur-3xl pointer-events-none" />
 
-    <div className="relative z-10 flex min-h-[420px] items-end sm:min-h-[480px] lg:min-h-[530px]">
-      <div className="max-w-3xl p-7 sm:p-10 lg:p-14">
-        <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold text-white backdrop-blur-md">
-          <Sprout className="h-4 w-4 text-agri-300" />
-          Your agriculture companion
+      <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6 p-6 sm:p-8 lg:p-10">
+        {/* Left Text and CTA Content */}
+        <div className="max-w-2xl flex-1">
+          {/* Top chips */}
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/10 text-agri-200 backdrop-blur border border-white/10">
+              <MapPin className="w-3.5 h-3.5 text-agri-400" />
+              Belagavi, Karnataka
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-200 border border-emerald-400/30">
+              <Calendar className="w-3.5 h-3.5 text-emerald-300" />
+              Rabi Season Active
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-200 border border-amber-400/30">
+              <Droplets className="w-3.5 h-3.5 text-amber-300" />
+              Next Irrigation: Tomorrow
+            </span>
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight">
+            Welcome back, <span className="text-agri-300">Ramesh!</span>
+          </h1>
+
+          <p className="mt-3 text-sm sm:text-base text-agri-100/90 leading-relaxed font-normal max-w-xl">
+            Here is your farm summary and agricultural advisories for today in Belagavi. Monitor your crops, check live mandi rates, and explore recommended farming practices.
+          </p>
+
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <NavLink
+              to="/crops"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-agri-500 text-white text-xs sm:text-sm font-bold shadow-sm hover:bg-agri-400 transition-all hover:shadow hover:scale-[1.02]"
+            >
+              <Sprout className="w-4 h-4" />
+              Explore Farming Resources
+              <ArrowRight className="w-4 h-4" />
+            </NavLink>
+
+            <NavLink
+              to="/farming-tools"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 text-white text-xs sm:text-sm font-bold border border-white/20 backdrop-blur hover:bg-white/20 transition-all"
+            >
+              Farming Calculators
+            </NavLink>
+
+            <NavLink
+              to="/ai-chatbot"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-emerald-800/80 text-emerald-200 text-xs sm:text-sm font-bold border border-emerald-600/40 hover:bg-emerald-700/80 transition-all"
+            >
+              <Sparkles className="w-4 h-4 text-emerald-300" />
+              Ask AI Assistant
+            </NavLink>
+          </div>
         </div>
 
-        <h1 className="text-4xl font-black leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
-          Farm smarter.
-          <span className="block text-agri-300">Grow better.</span>
-        </h1>
-
-        <p className="mt-5 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base sm:leading-7">
-          Get timely crop information, weather insights, market prices, farming tools and practical guidance — all in one place.
-        </p>
-
-        <div className="mt-7 flex flex-wrap gap-3">
-          <NavLink
-            to="/crops"
-            className="inline-flex items-center gap-2 rounded-full bg-agri-500 px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-black/10 transition hover:bg-agri-400"
-          >
-            Explore Farming Resources
-            <ArrowRight className="h-4 w-4" />
-          </NavLink>
-          <NavLink
-            to="/farming-tools"
-            className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-5 py-3 text-sm font-extrabold text-white backdrop-blur-md transition hover:bg-white/20"
-          >
-            Open Farming Tools
-          </NavLink>
-        </div>
-
-        <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-semibold text-slate-300">
-          <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-agri-300" /> Practical guidance</span>
-          <span className="inline-flex items-center gap-1.5"><Sprout className="h-4 w-4 text-agri-300" /> Built for farmers</span>
+        {/* Right Decorative Graphic / Farmer Image */}
+        <div className="relative shrink-0 w-48 sm:w-56 lg:w-64 flex justify-center">
+          <div className="relative">
+            <div className="absolute inset-0 bg-agri-600/30 rounded-2xl blur-xl" />
+            <img
+              src="/assets/Farmer.png"
+              alt="Farmer Ramesh Patil"
+              className="relative w-44 sm:w-52 lg:w-60 h-auto object-contain rounded-2xl drop-shadow-xl"
+            />
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default HeroBanner;

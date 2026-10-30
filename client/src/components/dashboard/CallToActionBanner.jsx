@@ -1,24 +1,81 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { ArrowRight, Sprout } from 'lucide-react';
+import {
+  ArrowRight,
+  Sprout,
+  Calculator,
+  BookOpen,
+  Bot,
+  ShieldCheck,
+  Award,
+} from 'lucide-react';
 
-const CallToActionBanner = () => (
-  <div className="relative overflow-hidden rounded-[2rem] bg-agri-800 px-7 py-10 text-white shadow-[0_18px_45px_rgba(21,108,60,0.18)] sm:px-10 lg:flex lg:items-center lg:justify-between lg:px-12">
-    <Sprout className="absolute -right-5 -top-10 h-56 w-56 rotate-12 text-white/5" />
-    <div className="relative max-w-2xl">
-      <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-agri-200">Make your next decision easier</p>
-      <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">Ready to grow smarter?</h2>
-      <p className="mt-3 text-sm leading-6 text-agri-100 sm:text-base">
-        Explore our farming tools, crop resources, market information and practical guidance today.
-      </p>
+const CallToActionBanner = () => {
+  return (
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-agri-900 via-agri-800 to-emerald-900 p-6 sm:p-8 lg:p-10 text-white shadow-md border border-agri-700/50">
+      <Sprout className="absolute -right-8 -bottom-10 w-64 h-64 text-white/5 pointer-events-none rotate-12" />
+
+      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div className="max-w-2xl">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/10 text-agri-200 border border-white/15">
+              Decision Support System
+            </span>
+            <span className="text-xs text-agri-300 font-medium">• Free for Farmers</span>
+          </div>
+
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
+            Ready to optimize your farming decisions?
+          </h2>
+
+          <p className="mt-2.5 text-xs sm:text-sm text-agri-100/90 leading-relaxed font-normal">
+            Take advantage of AgriSphere&apos;s field calculators, crop suitability matrix, regional market intelligence, and AI farming assistant to boost your harvest margins.
+          </p>
+
+          <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-agri-200">
+            <span className="flex items-center gap-1.5 font-medium">
+              <ShieldCheck className="w-4 h-4 text-agri-400" />
+              Verified Agronomic Data
+            </span>
+            <span className="flex items-center gap-1.5 font-medium">
+              <Award className="w-4 h-4 text-agri-400" />
+              UAS Dharwad & Belagavi APMC Sourced
+            </span>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
+          <NavLink
+            to="/farming-tools"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white text-agri-900 text-xs sm:text-sm font-extrabold hover:bg-agri-50 transition-all shadow-sm hover:scale-[1.02]"
+          >
+            <Calculator className="w-4 h-4 text-agri-700" />
+            Launch Farming Tools
+            <ArrowRight className="w-4 h-4 text-agri-700" />
+          </NavLink>
+
+          <div className="flex items-center gap-2">
+            <NavLink
+              to="/knowledge-hub"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/10 text-white text-xs font-bold border border-white/20 hover:bg-white/20 transition-all text-center"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-agri-300" />
+              Knowledge Hub
+            </NavLink>
+
+            <NavLink
+              to="/ai-chatbot"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-agri-500 text-white text-xs font-bold hover:bg-agri-400 transition-all text-center shadow-xs"
+            >
+              <Bot className="w-3.5 h-3.5" />
+              AI Assistant
+            </NavLink>
+          </div>
+        </div>
+      </div>
     </div>
-    <NavLink
-      to="/farming-tools"
-      className="relative mt-7 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-extrabold text-agri-800 transition hover:bg-agri-50 lg:mt-0"
-    >
-      Explore Now <ArrowRight className="h-4 w-4" />
-    </NavLink>
-  </div>
-);
+  );
+};
 
 export default CallToActionBanner;

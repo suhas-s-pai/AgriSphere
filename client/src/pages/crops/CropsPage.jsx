@@ -1,70 +1,468 @@
-import React, { useMemo, useState } from 'react';
-import { CalendarDays, Droplets, Filter, Leaf, Search, Sun, Sprout, X } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import {
+  Sprout,
+  Search,
+  Filter,
+  Droplets,
+  Calendar,
+  Layers,
+  MapPin,
+  CheckCircle2,
+  AlertCircle,
+  X,
+  ChevronRight,
+  Clock,
+  Sparkles,
+} from 'lucide-react';
+import LeafletMap from '../../components/common/LeafletMap.jsx';
 
-const crops = [
-  { name: 'Rice', season: 'Kharif', soil: 'Clay / Loamy', water: 'High', duration: '110–150 days', icon: '🌾', tip: 'Maintain standing water during key growth stages and avoid prolonged water stress.' },
-  { name: 'Ragi', season: 'Kharif', soil: 'Red / Loamy', water: 'Medium', duration: '95–120 days', icon: '🌱', tip: 'Well-drained soil and timely weeding help maintain good plant growth.' },
-  { name: 'Maize', season: 'Kharif / Rabi', soil: 'Loamy', water: 'Medium', duration: '90–120 days', icon: '🌽', tip: 'Use good-quality seed and maintain moisture around flowering and grain filling.' },
-  { name: 'Tomato', season: 'Kharif / Rabi', soil: 'Loamy', water: 'Medium', duration: '90–140 days', icon: '🍅', tip: 'Use raised beds where drainage is poor and monitor plants regularly for pests.' },
-  { name: 'Cotton', season: 'Kharif', soil: 'Black / Loamy', water: 'Medium', duration: '150–180 days', icon: '🌿', tip: 'Keep the field weed-free early and monitor for bollworm and sucking pests.' },
-  { name: 'Groundnut', season: 'Kharif / Summer', soil: 'Sandy loam', water: 'Medium', duration: '100–130 days', icon: '🥜', tip: 'Loose, well-drained soil supports peg penetration and pod development.' },
-  { name: 'Sugarcane', season: 'Year-round', soil: 'Loamy / Clay', water: 'High', duration: '10–18 months', icon: '🎋', tip: 'Plan irrigation and nutrient application according to crop stage.' },
-  { name: 'Chilli', season: 'Kharif / Rabi', soil: 'Loamy', water: 'Medium', duration: '150–180 days', icon: '🌶️', tip: 'Avoid waterlogging and scout regularly for thrips, mites and fungal problems.' },
+const cropsData = [
+  {
+    id: 'maize',
+    name: 'Maize (Corn)',
+    variety: 'Hybrid 900M / CP-818',
+    season: 'Kharif / Rabi',
+    soil: 'Loamy & Black Soil',
+    water: 'Medium (450–600 mm)',
+    duration: '90–110 days',
+    icon: '🌽',
+    suitableForBelagavi: true,
+    suitabilityReason: 'Well adapted to Belagavi climate. High yield on well-drained loamy soils during Rabi and Kharif.',
+    cultivation: {
+      sowing: 'June–July (Kharif) or Oct–Nov (Rabi). Seed rate: 8–10 kg/acre with 60cm x 20cm spacing.',
+      fertilizer: 'NPK 60:30:20 kg/acre. Apply full P and K at sowing with 1/3rd N; top dress remaining N in 2 splits.',
+      irrigation: 'Critical stages: Knee-high, tasseling, silking, and grain filling. Avoid water stagnation.',
+      pests: 'Watch for Fall Armyworm (FAW) on young shoots. Apply neem-based spray or Emamectin Benzoate.',
+      harvest: 'Harvest when husks turn dry paper-white and grain moisture is around 20%.',
+    },
+  },
+  {
+    id: 'tomato',
+    name: 'Tomato',
+    variety: 'S-22 / Shivam Hybrid',
+    season: 'Kharif / Rabi',
+    soil: 'Loamy & Sandy Loam',
+    water: 'Medium (600–800 mm)',
+    duration: '110–130 days',
+    icon: '🍅',
+    suitableForBelagavi: true,
+    suitabilityReason: 'Very high demand in Belagavi APMC. Thrives in moderate temperatures with drip irrigation.',
+    cultivation: {
+      sowing: 'Raise nursery seedlings for 25–30 days. Transplant on raised beds at 75cm x 45cm spacing.',
+      fertilizer: 'NPK 75:50:50 kg/acre. Incorporate 10 tonnes well-rotted FYM during land preparation.',
+      irrigation: 'Drip irrigation recommended every 2–3 days. Avoid flood irrigation to prevent root rot.',
+      pests: 'Scout regularly for Early Blight and Leaf Curl virus. Maintain staking for better air circulation.',
+      harvest: 'Pick at breaker or pink stage for long-distance transport (Goa/Maharashtra markets).',
+    },
+  },
+  {
+    id: 'groundnut',
+    name: 'Groundnut (Peanut)',
+    variety: 'TMV-2 / JL-24',
+    season: 'Kharif / Summer',
+    soil: 'Sandy Loam & Red Soil',
+    water: 'Medium (400–500 mm)',
+    duration: '100–120 days',
+    icon: '🥜',
+    suitableForBelagavi: true,
+    suitabilityReason: 'Ideal for red and sandy loam soils in Bailhongal and Gokak taluks. Enriches soil with nitrogen.',
+    cultivation: {
+      sowing: 'Sow with onset of monsoon (June–July). Seed rate: 45–50 kg kernels/acre.',
+      fertilizer: 'NPK 10:20:10 kg/acre + 200 kg Gypsum/acre at pegging stage to ensure well-filled pods.',
+      irrigation: 'Sensitive to moisture stress at flowering and peg development. Ensure moist loose soil.',
+      pests: 'Treat seed with Trichoderma. Monitor for Tikka leaf spot and collar rot.',
+      harvest: 'Harvest when inside of shell turns dark brown and foliage starts yellowing.',
+    },
+  },
+  {
+    id: 'rice',
+    name: 'Rice (Paddy)',
+    variety: 'Sona Masoori / Jaya',
+    season: 'Kharif',
+    soil: 'Clay Loam & Heavy Soils',
+    water: 'High (1000–1400 mm)',
+    duration: '120–140 days',
+    icon: '🌾',
+    suitableForBelagavi: true,
+    suitabilityReason: 'Traditional staple in Khanapur and southern Belagavi belts with assured rainfall or canal water.',
+    cultivation: {
+      sowing: 'Nursery sowing in June. Transplant 21–25 day old seedlings at 20cm x 15cm spacing.',
+      fertilizer: 'NPK 40:20:20 kg/acre. Apply Zinc Sulphate 10 kg/acre in deficient soils.',
+      irrigation: 'Maintain shallow water level (2–5 cm) from tillering to grain development stage.',
+      pests: 'Monitor for Stem Borer and Brown Plant Hopper. Drain water occasionally to discourage pests.',
+      harvest: 'Harvest when 80% grains in the panicle turn golden yellow.',
+    },
+  },
+  {
+    id: 'sugarcane',
+    name: 'Sugarcane',
+    variety: 'Co-86032 / Co-0238',
+    season: 'Year-round (Eksali / Adsali)',
+    soil: 'Deep Black & Clay Loam',
+    water: 'High (1500–2200 mm)',
+    duration: '11–14 months',
+    icon: '🎋',
+    suitableForBelagavi: true,
+    suitabilityReason: 'Major commercial crop in Belagavi district with proximity to leading sugar factories.',
+    cultivation: {
+      sowing: 'Plant 2-bud setts treated with Carbendazim. Furrow spacing: 4 to 5 feet.',
+      fertilizer: 'NPK 100:40:50 kg/acre in 4 splits. Earthing up at 90 days after planting.',
+      irrigation: 'Sub-surface drip saves 40% water and increases tonnage significantly.',
+      pests: 'Watch for Early Shoot Borer and Whitefly. Release Trichogramma parasitoids.',
+      harvest: 'Harvest at peak sucrose maturity (Brix > 19%) based on sugar mill crushing schedule.',
+    },
+  },
+  {
+    id: 'cotton',
+    name: 'Cotton',
+    variety: 'Bt Cotton Hybrids',
+    season: 'Kharif',
+    soil: 'Deep Black Cotton Soil',
+    water: 'Medium (600–750 mm)',
+    duration: '150–175 days',
+    icon: '🌿',
+    suitableForBelagavi: true,
+    suitabilityReason: 'Well established in Bailhongal and Saundatti black soil plains with high lint recovery.',
+    cultivation: {
+      sowing: 'June to mid-July. Spacing: 90cm x 60cm or 120cm x 45cm depending on plant architecture.',
+      fertilizer: 'NPK 40:20:20 kg/acre with micronutrient spray (Magnesium Sulphate + Boron) during boll stage.',
+      irrigation: 'Needs adequate moisture during square formation and boll development.',
+      pests: 'Install yellow sticky traps for whitefly and pheromone traps for pink bollworm monitoring.',
+      harvest: 'Pick clean, dry, fully opened bolls in sunny weather. Store in clean dry godowns.',
+    },
+  },
+  {
+    id: 'ragi',
+    name: 'Finger Millet (Ragi)',
+    variety: 'GPU-28 / MR-1',
+    season: 'Kharif',
+    soil: 'Red & Loamy Soils',
+    water: 'Low–Medium (350–450 mm)',
+    duration: '95–115 days',
+    icon: '🌱',
+    suitableForBelagavi: false,
+    suitabilityReason: 'Drought-tolerant millet. Best for red soil uplands where irrigation is limited.',
+    cultivation: {
+      sowing: 'July–August. Direct drill or transplant nursery seedlings.',
+      fertilizer: 'NPK 20:15:10 kg/acre. Organic farmyard manure highly beneficial.',
+      irrigation: 'Largely rainfed. 1–2 life-saving irrigations during dry spells.',
+      pests: 'Relatively pest-hardy. Watch for blast disease on leaves during humid weather.',
+      harvest: 'Harvest earheads when they turn brown and dry in the field.',
+    },
+  },
+  {
+    id: 'chilli',
+    name: 'Green Chilli',
+    variety: 'Byadagi Dabbi / G4 Hybrid',
+    season: 'Kharif / Rabi',
+    soil: 'Well-drained Loamy Soil',
+    water: 'Medium (500–650 mm)',
+    duration: '140–170 days',
+    icon: '🌶️',
+    suitableForBelagavi: true,
+    suitabilityReason: 'Karnataka benchmark spice. Byadagi varieties fetch premium export value.',
+    cultivation: {
+      sowing: 'Transplant 35-day seedlings on raised ridges at 60cm x 45cm.',
+      fertilizer: 'NPK 50:25:25 kg/acre + Neem cake 100 kg/acre during bed preparation.',
+      irrigation: 'Frequent light irrigations. Avoid water stagnation which triggers damping-off.',
+      pests: 'Scout for thrips and mites causing leaf curl. Use blue sticky traps and neem formulations.',
+      harvest: 'Pick green chillies at 10-day intervals or allow to turn dark red for drying.',
+    },
+  },
+];
+
+const regionalLocations = [
+  { id: 'belagavi', name: 'Belagavi Central', soil: 'Medium Black & Loam', coords: [15.8497, 74.4977] },
+  { id: 'gokak', name: 'Gokak Region', soil: 'Sandy Loam & Red Soil', coords: [16.1667, 74.8333] },
+  { id: 'chikodi', name: 'Chikodi Belt', soil: 'Clay Loam & River Soil', coords: [16.4333, 74.6000] },
+  { id: 'bailhongal', name: 'Bailhongal Plain', soil: 'Deep Black Cotton Soil', coords: [15.8167, 74.8667] },
 ];
 
 const CropsPage = () => {
-  const [query, setQuery] = useState('');
-  const [season, setSeason] = useState('All');
-  const [selected, setSelected] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSeason, setSelectedSeason] = useState('All');
+  const [selectedRegion, setSelectedRegion] = useState('belagavi');
+  const [selectedCrop, setSelectedCrop] = useState(null);
+  const [showRegionalMap, setShowRegionalMap] = useState(false);
 
-  const filtered = useMemo(() => crops.filter((crop) => {
-    const matchesQuery = crop.name.toLowerCase().includes(query.toLowerCase()) || crop.soil.toLowerCase().includes(query.toLowerCase());
-    const matchesSeason = season === 'All' || crop.season.includes(season);
-    return matchesQuery && matchesSeason;
-  }), [query, season]);
+  const currentRegion =
+    regionalLocations.find((r) => r.id === selectedRegion) || regionalLocations[0];
+
+  const filteredCrops = useMemo(() => {
+    return cropsData.filter((crop) => {
+      const matchesSeason =
+        selectedSeason === 'All' || crop.season.includes(selectedSeason);
+      const q = searchQuery.trim().toLowerCase();
+      const matchesQuery =
+        !q ||
+        crop.name.toLowerCase().includes(q) ||
+        crop.soil.toLowerCase().includes(q) ||
+        crop.variety.toLowerCase().includes(q);
+      return matchesSeason && matchesQuery;
+    });
+  }, [selectedSeason, searchQuery]);
+
+  const mapMarkers = regionalLocations.map((loc) => ({
+    id: loc.id,
+    title: loc.name,
+    type: `Soil: ${loc.soil}`,
+    position: loc.coords,
+    color: '#15803D',
+    description: `Recommended crops suited for ${loc.soil} conditions.`,
+  }));
 
   return (
-    <div className="pb-20">
-      <section className="relative overflow-hidden bg-agri-800 text-white">
-        <div className="absolute -right-24 -top-28 h-72 w-72 rounded-full bg-agri-500/20 blur-3xl" />
-        <div className="website-section relative py-16 sm:py-20 lg:py-24">
-          <div className="max-w-3xl">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-agri-100"><Sprout className="h-4 w-4" /> Crop library</span>
-            <h1 className="mt-6 text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">Choose the right crop for the right conditions.</h1>
-            <p className="mt-5 max-w-2xl text-sm leading-7 text-agri-100 sm:text-base">Explore crop seasons, soil preferences, water needs and practical cultivation tips in one simple place.</p>
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      {/* Header */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#15803D] bg-[#DCFCE7] px-2.5 py-1 rounded-md mb-2">
+            <Sprout className="w-3.5 h-3.5" />
+            <span>Crop Suitability & Agronomy Guides</span>
           </div>
-          <div className="mt-10 grid gap-3 sm:grid-cols-3">
-            {[['8+', 'Crop guides'], ['4', 'Key seasons'], ['3', 'Water levels']].map(([value, label]) => <div key={label} className="rounded-2xl border border-white/10 bg-white/10 p-5 backdrop-blur"><p className="text-2xl font-black">{value}</p><p className="mt-1 text-xs font-semibold text-agri-100">{label}</p></div>)}
+          <h1 className="text-2xl font-bold text-[#14532D]">Crop Information</h1>
+          <p className="text-sm text-[#64748B] mt-1">
+            Discover suitable crops, sowing guidelines, fertilizer schedules, and cultivation best practices for North Karnataka.
+          </p>
+        </div>
+
+        {/* Region Selector */}
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs font-medium text-[#64748B]">Region:</span>
+          <select
+            value={selectedRegion}
+            onChange={(e) => setSelectedRegion(e.target.value)}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#1F2937] outline-none focus:border-[#15803D]"
+          >
+            {regionalLocations.map((loc) => (
+              <option key={loc.id} value={loc.id}>
+                {loc.name}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => setShowRegionalMap(!showRegionalMap)}
+            className="p-1.5 rounded-lg border border-slate-200 text-[#15803D] hover:bg-[#DCFCE7] text-xs font-semibold"
+            title="Toggle Regional Map"
+          >
+            <MapPin className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Regional Map Collapsible Box */}
+      {showRegionalMap && (
+        <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <div>
+              <h3 className="text-sm font-bold text-[#1F2937]">Regional Agro-Ecological Zones</h3>
+              <p className="text-xs text-[#64748B]">Click any zone to tune soil and crop suitability recommendations.</p>
+            </div>
+            <button
+              onClick={() => setShowRegionalMap(false)}
+              className="text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <LeafletMap
+            center={currentRegion.coords}
+            zoom={10}
+            markers={mapMarkers}
+            selectedId={selectedRegion}
+            onSelectMarker={(m) => setSelectedRegion(m.id)}
+            height="260px"
+          />
+        </div>
+      )}
+
+      {/* Suitability Banner for Selected Region */}
+      <div className="bg-[#DCFCE7]/70 rounded-xl border border-emerald-200 p-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-[#15803D] text-white flex items-center justify-center shrink-0">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-[#14532D]">
+              Recommended for {currentRegion.name} ({currentRegion.soil})
+            </h3>
+            <p className="text-xs text-[#15803D] mt-0.5">
+              Current Season: <span className="font-semibold">Rabi / Kharif Transitions</span>. Maize, Tomato, and Sugarcane have high historical yield in this zone.
+            </p>
           </div>
         </div>
-      </section>
 
-      <section className="website-section -mt-8 relative z-10">
-        <div className="website-card p-4 sm:p-5">
-          <div className="grid gap-3 lg:grid-cols-[1fr_210px_auto]">
-            <label className="relative block"><Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search a crop or soil type..." className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm font-medium outline-none focus:border-agri-400 focus:bg-white focus:ring-4 focus:ring-agri-100" /></label>
-            <select value={season} onChange={(e) => setSeason(e.target.value)} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-agri-400"><option>All</option><option>Kharif</option><option>Rabi</option><option>Summer</option></select>
-            <button type="button" onClick={() => { setQuery(''); setSeason('All'); }} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50"><X className="h-4 w-4" /> Reset</button>
+        <span className="text-xs text-[#14532D] bg-white px-3 py-1 rounded-md border border-emerald-300 font-semibold self-start sm:self-auto">
+          Zone: Northern Dry / Transition
+        </span>
+      </div>
+
+      {/* Search & Season Filters */}
+      <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="relative flex-1 w-full">
+          <Search className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search crop name, variety, or soil type..."
+            className="w-full bg-[#F8FAF6] hover:bg-white focus:bg-white border border-slate-200 focus:border-[#15803D] rounded-lg pl-10 pr-8 py-2 text-sm text-[#1F2937] placeholder-slate-400 focus:outline-none transition-colors"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Season Filter Pills */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {['All', 'Kharif', 'Rabi', 'Summer'].map((s) => (
+            <button
+              key={s}
+              onClick={() => setSelectedSeason(s)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                selectedSeason === s
+                  ? 'bg-[#15803D] text-white'
+                  : 'bg-[#F8FAF6] text-[#64748B] hover:text-[#1F2937] border border-slate-200'
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Crops Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {filteredCrops.map((crop) => (
+          <div
+            key={crop.id}
+            onClick={() => setSelectedCrop(crop)}
+            className="group bg-white rounded-xl border border-slate-200 p-5 hover:border-[#15803D] cursor-pointer transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-start justify-between">
+                <span className="text-3xl">{crop.icon}</span>
+                <span className="text-[10px] font-bold text-[#15803D] bg-[#DCFCE7] px-2 py-0.5 rounded-full">
+                  {crop.season}
+                </span>
+              </div>
+
+              <h3 className="text-base font-bold text-[#1F2937] group-hover:text-[#15803D] transition-colors mt-3">
+                {crop.name}
+              </h3>
+              <p className="text-xs text-slate-500 font-medium">{crop.variety}</p>
+
+              <div className="mt-3 space-y-1 text-xs text-[#64748B]">
+                <div className="flex justify-between">
+                  <span>Soil:</span>
+                  <span className="font-semibold text-[#1F2937]">{crop.soil}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Duration:</span>
+                  <span className="font-semibold text-[#1F2937]">{crop.duration}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Water Need:</span>
+                  <span className="font-semibold text-[#1F2937]">{crop.water}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#15803D]">
+              <span>View Cultivation Guide</span>
+              <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {filteredCrops.length === 0 && (
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-[#64748B]">
+          <Sprout className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+          <p className="text-sm font-semibold text-[#1F2937]">No crops match your search or filter</p>
+          <p className="text-xs text-slate-400 mt-1">Try selecting &quot;All&quot; seasons or resetting your search query.</p>
+        </div>
+      )}
+
+      {/* Comprehensive Cultivation Guide Modal */}
+      {selectedCrop && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setSelectedCrop(null)}
+        >
+          <div
+            className="w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white rounded-xl border border-slate-200 p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <span className="text-4xl">{selectedCrop.icon}</span>
+                <div>
+                  <h2 className="text-lg font-bold text-[#1F2937]">{selectedCrop.name} Guide</h2>
+                  <p className="text-xs text-[#64748B]">
+                    Variety: {selectedCrop.variety} • Season: {selectedCrop.season}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedCrop(null)}
+                className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Suitability Note */}
+            <div className="mt-4 p-3 rounded-lg bg-[#DCFCE7] text-xs text-[#14532D] leading-relaxed">
+              <span className="font-bold">Regional Suitability: </span>
+              {selectedCrop.suitabilityReason}
+            </div>
+
+            {/* Agronomic Details */}
+            <div className="mt-4 space-y-3.5 text-xs">
+              <div className="p-3 bg-[#F8FAF6] rounded-lg border border-slate-200">
+                <span className="font-bold text-[#14532D] block mb-1">🌱 Land Preparation & Sowing</span>
+                <p className="text-[#1F2937] leading-relaxed">{selectedCrop.cultivation.sowing}</p>
+              </div>
+
+              <div className="p-3 bg-[#F8FAF6] rounded-lg border border-slate-200">
+                <span className="font-bold text-[#14532D] block mb-1">🧪 Fertilizer & Nutrient Schedule</span>
+                <p className="text-[#1F2937] leading-relaxed">{selectedCrop.cultivation.fertilizer}</p>
+              </div>
+
+              <div className="p-3 bg-[#F8FAF6] rounded-lg border border-slate-200">
+                <span className="font-bold text-[#14532D] block mb-1">💧 Irrigation Guidelines</span>
+                <p className="text-[#1F2937] leading-relaxed">{selectedCrop.cultivation.irrigation}</p>
+              </div>
+
+              <div className="p-3 bg-[#F8FAF6] rounded-lg border border-slate-200">
+                <span className="font-bold text-[#14532D] block mb-1">🛡️ Pest & Disease Management</span>
+                <p className="text-[#1F2937] leading-relaxed">{selectedCrop.cultivation.pests}</p>
+              </div>
+
+              <div className="p-3 bg-[#F8FAF6] rounded-lg border border-slate-200">
+                <span className="font-bold text-[#14532D] block mb-1">🌾 Harvesting & Post-Harvest</span>
+                <p className="text-[#1F2937] leading-relaxed">{selectedCrop.cultivation.harvest}</p>
+              </div>
+            </div>
+
+            <div className="mt-5 pt-3 border-t border-slate-100 flex justify-end">
+              <button
+                onClick={() => setSelectedCrop(null)}
+                className="px-4 py-1.5 rounded-lg bg-[#15803D] text-white text-xs font-semibold hover:bg-[#14532D]"
+              >
+                Close Guide
+              </button>
+            </div>
           </div>
         </div>
-      </section>
-
-      <section className="website-section py-14 sm:py-16">
-        <div className="flex items-end justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.18em] text-agri-600">Crop guides</p><h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">Find a crop</h2></div><span className="hidden items-center gap-2 text-sm font-bold text-slate-400 sm:flex"><Filter className="h-4 w-4" /> {filtered.length} results</span></div>
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((crop) => <button key={crop.name} type="button" onClick={() => setSelected(crop)} className="group text-left website-card p-6 transition hover:-translate-y-1 hover:border-agri-200 hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
-            <div className="flex items-start justify-between"><span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-agri-50 text-3xl">{crop.icon}</span><span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500">{crop.season}</span></div>
-            <h3 className="mt-6 text-lg font-black text-slate-950">{crop.name}</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-500">{crop.soil} soil · {crop.duration}</p>
-            <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 text-xs font-bold"><span className="flex items-center gap-1.5 text-slate-500"><Droplets className="h-4 w-4 text-sky-500" /> {crop.water} water</span><span className="text-agri-600 group-hover:underline">View guide →</span></div>
-          </button>)}
-        </div>
-        {!filtered.length && <div className="mt-8 rounded-2xl border border-dashed border-slate-300 p-12 text-center"><Leaf className="mx-auto h-8 w-8 text-slate-300" /><p className="mt-3 font-bold text-slate-600">No crops match your search.</p></div>}
-      </section>
-
-      <section className="bg-white border-y border-slate-200/70"><div className="website-section py-14"><div className="grid gap-5 md:grid-cols-3"><div className="rounded-2xl bg-agri-50 p-6"><Sun className="h-6 w-6 text-agri-600" /><h3 className="mt-4 font-black text-slate-900">Season first</h3><p className="mt-2 text-sm leading-6 text-slate-500">Check the crop season before choosing seed or planning field preparation.</p></div><div className="rounded-2xl bg-amber-50 p-6"><Droplets className="h-6 w-6 text-amber-600" /><h3 className="mt-4 font-black text-slate-900">Match water needs</h3><p className="mt-2 text-sm leading-6 text-slate-500">Water availability can make a major difference to crop performance and input costs.</p></div><div className="rounded-2xl bg-sky-50 p-6"><CalendarDays className="h-6 w-6 text-sky-600" /><h3 className="mt-4 font-black text-slate-900">Plan the cycle</h3><p className="mt-2 text-sm leading-6 text-slate-500">Use crop duration to coordinate sowing, irrigation, pest scouting and harvest.</p></div></div></div></section>
-
-      {selected && <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-5" onClick={() => setSelected(null)}><div className="w-full max-w-lg rounded-3xl bg-white p-7 shadow-2xl" onClick={(e) => e.stopPropagation()}><div className="flex items-start justify-between"><div><span className="text-4xl">{selected.icon}</span><h2 className="mt-4 text-2xl font-black text-slate-950">{selected.name}</h2></div><button onClick={() => setSelected(null)} className="rounded-full p-2 hover:bg-slate-100"><X className="h-5 w-5" /></button></div><div className="mt-6 grid grid-cols-2 gap-3"><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold text-slate-400">Season</p><p className="mt-1 font-black text-slate-800">{selected.season}</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold text-slate-400">Water</p><p className="mt-1 font-black text-slate-800">{selected.water}</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold text-slate-400">Soil</p><p className="mt-1 font-black text-slate-800">{selected.soil}</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold text-slate-400">Duration</p><p className="mt-1 font-black text-slate-800">{selected.duration}</p></div></div><div className="mt-5 rounded-2xl bg-agri-50 p-5"><p className="text-xs font-black uppercase tracking-wider text-agri-700">Practical tip</p><p className="mt-2 text-sm leading-6 text-agri-900">{selected.tip}</p></div></div></div>}
+      )}
     </div>
   );
 };

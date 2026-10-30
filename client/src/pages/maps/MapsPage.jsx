@@ -1,340 +1,240 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
-  Crosshair,
-  ExternalLink,
-  Layers3,
   MapPin,
-  Navigation,
   Search,
-  Warehouse,
+  ExternalLink,
+  Navigation,
   Wheat,
+  Warehouse,
+  Crosshair,
+  Layers3,
+  X,
+  Phone,
 } from 'lucide-react';
-
-const CENTER = [15.8497, 74.4977];
+import LeafletMap from '../../components/common/LeafletMap.jsx';
 
 const locations = [
   {
     id: 'apmc',
-    type: 'APMC / Mandi',
-    title: 'APMC Market · Belagavi',
-    description: 'Use this point as the market discovery entry for APMC and mandi services.',
+    type: 'APMC Mandi',
+    category: 'market',
+    title: 'APMC Market Yard · Belagavi',
+    description: 'Major agricultural auction yard for grains, vegetables, pulses, and oilseeds.',
     position: [15.8583, 74.5062],
-    color: '#1b8048',
+    color: '#15803D',
+    address: 'APMC Road, Opposite Railway Bridge, Belagavi',
+    contact: '+91 831 245 1102',
   },
   {
     id: 'storage',
     type: 'Cold Storage',
-    title: 'Cold Storage & Warehouse',
-    description: 'Storage discovery point. Connect the backend directory here later.',
+    category: 'storage',
+    title: 'Central Warehouse & Multi-Commodity Cold Storage',
+    description: 'Temperature-controlled storage for onions, potatoes, seeds, and processed jaggery.',
     position: [15.8424, 74.5124],
-    color: '#2563eb',
+    color: '#2563EB',
+    address: 'Industrial Estate, Udyambag, Belagavi',
+    contact: '+91 831 244 8830',
   },
   {
     id: 'inputs',
     type: 'Agri Inputs',
-    title: 'Agri Input Dealers & Nurseries',
-    description: 'Find seed, fertilizer and nursery resources around the selected area.',
+    category: 'inputs',
+    title: 'Raitha Seva Input Kendra & Nursery',
+    description: 'Certified foundation seeds, bio-fertilizers, neem cake, and vegetable seedlings.',
     position: [15.8531, 74.4868],
-    color: '#d97706',
+    color: '#D97706',
+    address: 'Khanapur Road, Tilakwadi, Belagavi',
+    contact: '+91 94481 33201',
   },
   {
     id: 'kvk',
-    type: 'KVK / Extension',
-    title: 'Krishi Vigyan Kendra',
-    description: 'Extension and expert-support discovery point for farmers.',
+    type: 'KVK Extension',
+    category: 'kvk',
+    title: 'Krishi Vigyan Kendra (KVK) Mattikopp',
+    description: 'ICAR agricultural research station offering soil testing, crop training, and expert advice.',
     position: [15.8277, 74.5211],
-    color: '#7c3aed',
+    color: '#7C3AED',
+    address: 'Mattikopp, Bailhongal Taluk, Belagavi',
+    contact: '+91 831 249 8765',
   },
 ];
 
 const categories = [
-  { id: 'all', label: 'All places', icon: Layers3 },
-  { id: 'APMC / Mandi', label: 'Markets', icon: Wheat },
-  { id: 'Cold Storage', label: 'Storage', icon: Warehouse },
-  { id: 'Agri Inputs', label: 'Agri inputs', icon: MapPin },
-  { id: 'KVK / Extension', label: 'KVKs', icon: Navigation },
+  { id: 'all', label: 'All Services' },
+  { id: 'market', label: 'APMC Mandis' },
+  { id: 'storage', label: 'Cold Storage' },
+  { id: 'inputs', label: 'Agri Inputs' },
+  { id: 'kvk', label: 'KVK & Extension' },
 ];
 
-const loadLeaflet = () => new Promise((resolve, reject) => {
-  if (window.L) {
-    resolve(window.L);
-    return;
-  }
-
-  const existingScript = document.querySelector('script[data-leaflet="true"]');
-  if (existingScript) {
-    existingScript.addEventListener('load', () => resolve(window.L), { once: true });
-    existingScript.addEventListener('error', reject, { once: true });
-    return;
-  }
-
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-  link.dataset.leaflet = 'true';
-  document.head.appendChild(link);
-
-  const script = document.createElement('script');
-  script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-  script.async = true;
-  script.dataset.leaflet = 'true';
-  script.onload = () => resolve(window.L);
-  script.onerror = reject;
-  document.body.appendChild(script);
-});
-
 const MapsPage = () => {
-  const mapElement = useRef(null);
-  const mapRef = useRef(null);
-  const markersRef = useRef([]);
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [mapReady, setMapReady] = useState(false);
-  const [locationMessage, setLocationMessage] = useState('Belagavi, Karnataka');
   const [selectedPlace, setSelectedPlace] = useState(null);
 
   const filteredLocations = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
     return locations.filter((place) => {
-      const categoryMatch = activeCategory === 'all' || place.type === activeCategory;
-      const queryMatch = !query || `${place.title} ${place.type} ${place.description}`.toLowerCase().includes(query);
+      const categoryMatch =
+        activeCategory === 'all' || place.category === activeCategory;
+      const q = searchQuery.trim().toLowerCase();
+      const queryMatch =
+        !q ||
+        place.title.toLowerCase().includes(q) ||
+        place.type.toLowerCase().includes(q) ||
+        place.description.toLowerCase().includes(q);
       return categoryMatch && queryMatch;
     });
   }, [activeCategory, searchQuery]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    loadLeaflet()
-      .then((L) => {
-        if (cancelled || !mapElement.current || mapRef.current) return;
-
-        const map = L.map(mapElement.current, { zoomControl: true, scrollWheelZoom: true }).setView(CENTER, 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap contributors',
-          maxZoom: 19,
-        }).addTo(map);
-        mapRef.current = map;
-        setMapReady(true);
-      })
-      .catch(() => setMapReady(false));
-
-    return () => {
-      cancelled = true;
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!mapRef.current || !window.L) return;
-
-    markersRef.current.forEach((marker) => marker.remove());
-    markersRef.current = [];
-
-    filteredLocations.forEach((place) => {
-      const icon = window.L.divIcon({
-        className: 'agri-map-marker',
-        html: `<span style="--marker-color:${place.color}">${place.type === 'APMC / Mandi' ? 'M' : place.type === 'Cold Storage' ? 'S' : place.type === 'Agri Inputs' ? 'A' : 'K'}</span>`,
-        iconSize: [40, 40],
-        iconAnchor: [20, 38],
-        popupAnchor: [0, -38],
-      });
-
-      const marker = window.L.marker(place.position, { icon }).addTo(mapRef.current);
-      marker.bindPopup(`
-        <div style="min-width:210px">
-          <strong style="font-size:14px">${place.title}</strong>
-          <div style="margin-top:5px;color:#64748b;font-size:12px;line-height:1.5">${place.description}</div>
-        </div>
-      `);
-      marker.on('click', () => setSelectedPlace(place));
-      markersRef.current.push(marker);
-    });
-
-    if (filteredLocations.length) {
-      const bounds = window.L.latLngBounds(filteredLocations.map((place) => place.position));
-      mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
-    }
-  }, [filteredLocations]);
-
-  const useMyLocation = () => {
-    if (!navigator.geolocation) {
-      setLocationMessage('Location is not supported by this browser.');
-      return;
-    }
-
-    setLocationMessage('Finding your location...');
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        if (mapRef.current && window.L) {
-          mapRef.current.setView([coords.latitude, coords.longitude], 14);
-          window.L.circleMarker([coords.latitude, coords.longitude], {
-            radius: 9,
-            color: '#ffffff',
-            weight: 3,
-            fillColor: '#1b8048',
-            fillOpacity: 1,
-          }).addTo(mapRef.current).bindPopup('You are here').openPopup();
-        }
-        setLocationMessage('Showing your current location');
-      },
-      () => setLocationMessage('Location permission was not granted.'),
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  };
-
-  const openDirections = (place) => {
-    const [lat, lng] = place.position;
-    window.open(`https://www.openstreetmap.org/directions?from=&to=${lat}%2C${lng}`, '_blank', 'noopener,noreferrer');
-  };
+  const mapMarkers = filteredLocations.map((p) => ({
+    id: p.id,
+    title: p.title,
+    type: p.type,
+    position: p.position,
+    color: p.color,
+    address: p.address,
+    contact: p.contact,
+    description: p.description,
+  }));
 
   return (
-    <div className="min-h-[70vh] pb-16">
-      <section className="bg-agri-800 text-white">
-        <div className="website-section py-14 sm:py-16 lg:py-20">
-          <div className="max-w-4xl">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15">
-                <MapPin className="h-6 w-6" />
-              </div>
-              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-agri-100">
-                Maps & Nearby
-              </span>
-            </div>
-            <h1 className="mt-7 text-4xl font-black tracking-tight sm:text-5xl">Find agricultural services near you.</h1>
-            <p className="mt-4 max-w-3xl text-sm leading-6 text-agri-100 sm:text-base sm:leading-7">
-              Explore markets, storage facilities, agri-input resources and KVK support on an interactive OpenStreetMap view.
-            </p>
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      {/* Header */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#15803D] bg-[#DCFCE7] px-2.5 py-1 rounded-md mb-2">
+            <MapPin className="w-3.5 h-3.5" />
+            <span>Geo-Spatial Services Directory</span>
           </div>
+          <h1 className="text-2xl font-bold text-[#14532D]">Maps & Nearby Services</h1>
+          <p className="text-sm text-[#64748B] mt-1">
+            Locate APMC markets, cold storage facilities, input dealers, and Krishi Vigyan Kendras across Belagavi.
+          </p>
         </div>
-      </section>
+      </div>
 
-      <section className="website-section py-10 sm:py-12">
-        <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-agri-600">Explore nearby</p>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Agriculture map</h2>
-            <p className="mt-2 text-sm text-slate-500">{locationMessage}</p>
-          </div>
-          <button
-            type="button"
-            onClick={useMyLocation}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-agri-200 bg-white px-4 py-3 text-sm font-extrabold text-agri-700 shadow-sm hover:bg-agri-50"
-          >
-            <Crosshair className="h-4 w-4" /> Use my location
-          </button>
-        </div>
-
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_12px_35px_rgba(15,23,42,0.06)]">
-            <div className="border-b border-slate-100 p-4 sm:p-5">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search APMC, storage, agri inputs or KVK..."
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm outline-none focus:border-agri-400 focus:bg-white focus:ring-4 focus:ring-agri-100"
-                />
-              </div>
-              <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-                {categories.map((category) => {
-                  const Icon = category.icon;
-                  const active = activeCategory === category.id;
-                  return (
-                    <button
-                      key={category.id}
-                      type="button"
-                      onClick={() => setActiveCategory(category.id)}
-                      className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-extrabold transition ${active ? 'bg-agri-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-agri-50 hover:text-agri-700'}`}
-                    >
-                      <Icon className="h-3.5 w-3.5" /> {category.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="relative h-[430px] sm:h-[520px]">
-              <div ref={mapElement} className="h-full w-full" />
-              {!mapReady && (
-                <div className="absolute inset-0 flex items-center justify-center bg-slate-100/90 p-6 text-center">
-                  <div>
-                    <MapPin className="mx-auto h-8 w-8 text-agri-600" />
-                    <p className="mt-3 text-sm font-extrabold text-slate-800">Loading interactive map...</p>
-                    <p className="mt-1 text-xs text-slate-500">The map uses OpenStreetMap and Leaflet.</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <aside className="h-fit rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.05)] xl:sticky xl:top-28">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Map results</p>
-                <h3 className="mt-1 text-lg font-black text-slate-950">Nearby resources</h3>
-              </div>
-              <span className="rounded-full bg-agri-50 px-2.5 py-1 text-xs font-black text-agri-700">{filteredLocations.length}</span>
-            </div>
-
-            <div className="mt-5 space-y-3">
-              {filteredLocations.length ? filteredLocations.map((place) => (
-                <button
-                  key={place.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedPlace(place);
-                    mapRef.current?.setView(place.position, 15);
-                    markersRef.current.find((marker) => marker.getLatLng().lat === place.position[0] && marker.getLatLng().lng === place.position[1])?.openPopup();
-                  }}
-                  className={`w-full rounded-2xl border p-4 text-left transition ${selectedPlace?.id === place.id ? 'border-agri-300 bg-agri-50' : 'border-slate-200 bg-white hover:border-agri-200 hover:bg-agri-50/40'}`}
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-black text-slate-700">{place.type.split(' ')[0][0]}</span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-extrabold text-slate-900">{place.title}</p>
-                      <p className="mt-1 text-xs leading-5 text-slate-500">{place.description}</p>
-                    </div>
-                  </div>
-                </button>
-              )) : (
-                <div className="rounded-2xl bg-slate-50 p-5 text-sm text-slate-500">No locations match your search.</div>
-              )}
-            </div>
-
-            {selectedPlace && (
-              <div className="mt-4 rounded-2xl bg-agri-50 p-4">
-                <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-agri-700">Selected location</p>
-                <p className="mt-1 text-sm font-black text-slate-900">{selectedPlace.title}</p>
-                <button
-                  type="button"
-                  onClick={() => openDirections(selectedPlace)}
-                  className="mt-3 inline-flex items-center gap-2 text-xs font-extrabold text-agri-700 hover:text-agri-900"
-                >
-                  Get directions <ExternalLink className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            )}
-          </aside>
+      {/* Search & Category Filter */}
+      <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+        <div className="relative w-full">
+          <Search className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search APMC mandi, warehouse, cold storage, seed inputs, or KVK..."
+            className="w-full bg-[#F8FAF6] hover:bg-white focus:bg-white border border-slate-200 focus:border-[#15803D] rounded-lg pl-10 pr-8 py-2 text-sm text-[#1F2937] placeholder-slate-400 focus:outline-none transition-colors"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {[
-            ['OpenStreetMap', 'Open map data for exploring roads and nearby places.'],
-            ['Live location', 'Use your browser location to center the map around you.'],
-            ['API-ready', 'The seeded points can later be replaced with your team database/API data.'],
-          ].map(([title, text]) => (
-            <div key={title} className="rounded-2xl border border-slate-200 bg-white p-5">
-              <p className="text-sm font-extrabold text-slate-900">{title}</p>
-              <p className="mt-2 text-xs leading-5 text-slate-500">{text}</p>
-            </div>
+        {/* Categories */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              className={`px-3 py-1 rounded-md text-xs whitespace-nowrap transition-colors ${
+                activeCategory === cat.id
+                  ? 'bg-[#15803D] text-white font-medium'
+                  : 'bg-[#F8FAF6] text-[#64748B] hover:text-[#1F2937] border border-slate-200'
+              }`}
+            >
+              {cat.label}
+            </button>
           ))}
         </div>
-      </section>
+      </div>
+
+      {/* Map and Services Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Map Column */}
+        <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 p-4 sticky top-20">
+          <div className="flex items-center justify-between mb-3 text-xs text-[#64748B]">
+            <span className="font-semibold text-[#1F2937]">Belagavi Agricultural Geo-Map</span>
+            <span>{filteredLocations.length} Points Marked</span>
+          </div>
+
+          <LeafletMap
+            center={selectedPlace ? selectedPlace.position : [15.8497, 74.4977]}
+            zoom={selectedPlace ? 14 : 12}
+            markers={mapMarkers}
+            selectedId={selectedPlace?.id}
+            onSelectMarker={(p) => setSelectedPlace(p)}
+            height="460px"
+          />
+
+          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-[#64748B]">
+            <span>Click any marker to view contact and directions</span>
+            <span className="text-[#15803D] font-semibold">OpenStreetMap Powered</span>
+          </div>
+        </div>
+
+        {/* List Column */}
+        <div className="lg:col-span-5 space-y-3">
+          <div className="flex items-center justify-between text-xs text-[#64748B] px-1">
+            <span className="font-semibold text-[#1F2937]">
+              Nearby Services Directory ({filteredLocations.length})
+            </span>
+          </div>
+
+          {filteredLocations.map((item) => {
+            const isSelected = selectedPlace?.id === item.id;
+            return (
+              <div
+                key={item.id}
+                onClick={() => setSelectedPlace(item)}
+                className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                  isSelected
+                    ? 'bg-[#DCFCE7]/50 border-[#15803D] shadow-xs'
+                    : 'bg-white border-slate-200 hover:border-[#15803D]'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
+                    style={{ backgroundColor: '#F1F5F9', color: item.color }}
+                  >
+                    {item.type}
+                  </span>
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${item.position[0]},${item.position[1]}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-xs font-semibold text-[#15803D] hover:underline inline-flex items-center gap-1"
+                  >
+                    Directions <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+
+                <h3 className="text-sm font-bold text-[#1F2937] mt-2">{item.title}</h3>
+                <p className="text-xs text-[#64748B] mt-1 line-clamp-2 leading-relaxed">
+                  {item.description}
+                </p>
+
+                <div className="mt-3 pt-2.5 border-t border-slate-100 text-xs text-slate-500 space-y-0.5">
+                  <p className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                    <span>{item.address}</span>
+                  </p>
+                  <p className="flex items-center gap-1">
+                    <Phone className="w-3 h-3 text-[#15803D] shrink-0" />
+                    <span>{item.contact}</span>
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 };

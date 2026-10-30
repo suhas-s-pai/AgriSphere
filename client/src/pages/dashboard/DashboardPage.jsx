@@ -1,39 +1,48 @@
 import React from 'react';
-import HeroBanner from '../../components/dashboard/HeroBanner.jsx';
+import WelcomeSection from '../../components/dashboard/WelcomeSection.jsx';
+import QuickOverviewCards from '../../components/dashboard/QuickOverviewCards.jsx';
 import ExploreFeatures from '../../components/dashboard/ExploreFeatures.jsx';
-import RecommendedSection from '../../components/dashboard/RecommendedSection.jsx';
-import CallToActionBanner from '../../components/dashboard/CallToActionBanner.jsx';
 import WeatherPanel from '../../components/dashboard/WeatherPanel.jsx';
 import MarketPricesPanel from '../../components/dashboard/MarketPricesPanel.jsx';
+import RecommendedSection from '../../components/dashboard/RecommendedSection.jsx';
 import RecentAlertsPanel from '../../components/dashboard/RecentAlertsPanel.jsx';
 
 const DashboardPage = () => {
   return (
-    <div className="pb-16">
-      <section className="website-section pt-8 sm:pt-10 lg:pt-12">
-        <HeroBanner />
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+      {/* SECTION 1: WELCOME */}
+      <section aria-label="Welcome">
+        <WelcomeSection />
       </section>
 
-      <section className="website-section py-12 sm:py-14 lg:py-16">
+      {/* SECTION 2: QUICK OVERVIEW */}
+      <section aria-label="Quick Overview">
+        <QuickOverviewCards />
+      </section>
+
+      {/* SECTION 3: EXPLORE FEATURES */}
+      <section aria-label="Explore Features">
         <ExploreFeatures />
       </section>
 
-      <section className="bg-white py-12 sm:py-14 lg:py-16">
-        <div className="website-section">
-          <RecommendedSection />
-        </div>
+      {/* SECTION 4: WEATHER */}
+      <section aria-label="Weather">
+        <WeatherPanel />
       </section>
 
-      <section className="website-section py-12 sm:py-14 lg:py-16">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <WeatherPanel />
-          <MarketPricesPanel />
-          <RecentAlertsPanel />
-        </div>
+      {/* SECTION 5: MARKET PRICES */}
+      <section aria-label="Market Prices">
+        <MarketPricesPanel />
       </section>
 
-      <section className="website-section pb-4">
-        <CallToActionBanner />
+      {/* SECTION 6: RECOMMENDATIONS */}
+      <section aria-label="Recommendations">
+        <RecommendedSection />
+      </section>
+
+      {/* SECTION 7: RECENT NOTIFICATIONS */}
+      <section aria-label="Recent Notifications">
+        <RecentAlertsPanel />
       </section>
     </div>
   );
