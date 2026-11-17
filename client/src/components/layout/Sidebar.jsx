@@ -18,6 +18,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react';
+import { useLocationContext } from '../../context/LocationContext.jsx';
 
 const navSections = [
   {
@@ -56,6 +57,7 @@ const bottomNavItems = [
 
 const Sidebar = ({ isMobileOpen, onCloseMobile, isCollapsed, onToggleCollapse }) => {
   const location = useLocation();
+  const { city, district } = useLocationContext();
 
   const handleToggle = () => {
     if (isMobileOpen && onCloseMobile) {
@@ -212,7 +214,9 @@ const Sidebar = ({ isMobileOpen, onCloseMobile, isCollapsed, onToggleCollapse })
             {!isCollapsed && (
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-[#1F2937] truncate">Ramesh Patil</p>
-                <p className="text-[11px] text-[#64748B] truncate">Belagavi Farmer</p>
+                <p className="text-[11px] text-[#64748B] truncate">
+                  {city || district ? `${city || district} Farmer` : 'Progressive Farmer'}
+                </p>
               </div>
             )}
           </div>

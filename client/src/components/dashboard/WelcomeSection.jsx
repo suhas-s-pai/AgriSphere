@@ -1,7 +1,17 @@
 import React from 'react';
-import { MapPin, ArrowRight } from 'lucide-react';
+import { MapPin, Navigation, Globe, ArrowRight, Loader2, AlertTriangle } from 'lucide-react';
+import { useLocationContext } from '../../context/LocationContext.jsx';
 
 const WelcomeSection = () => {
+  const {
+    formattedName,
+    isGps,
+    isManual,
+    isGlobal,
+    permissionStatus,
+    loadingStatus,
+  } = useLocationContext();
+
   const handleScrollToFeatures = () => {
     const el = document.getElementById('explore-features');
     if (el) {
@@ -33,8 +43,24 @@ const WelcomeSection = () => {
       {/* Welcome Content Overlay */}
       <div className="relative z-10 p-6 sm:p-10 lg:p-12 text-left max-w-2xl">
         <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-200 bg-emerald-950/60 backdrop-blur-sm border border-emerald-500/30 px-2.5 py-1 rounded-md mb-3">
-          <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Belagavi, Karnataka</span>
+          {loadingStatus ? (
+            <Loader2 className="w-3.5 h-3.5 text-emerald-400 animate-spin" />
+          ) : permissionStatus === 'denied' ? (
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+          ) : isGps ? (
+            <Navigation className="w-3.5 h-3.5 text-emerald-400" />
+          ) : isGlobal ? (
+            <Globe className="w-3.5 h-3.5 text-emerald-400" />
+          ) : (
+            <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+          )}
+          <span>
+            {loadingStatus
+              ? 'Detecting Location...'
+              : permissionStatus === 'denied'
+              ? 'Location Permission Denied'
+              : formattedName}
+          </span>
         </div>
 
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight">

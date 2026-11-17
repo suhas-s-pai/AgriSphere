@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Layers,
   FlaskConical,
@@ -10,37 +10,20 @@ import {
   Search,
   ChevronRight,
   X,
+  FileText,
+  Save,
+  RotateCcw,
+  ShieldCheck,
+  Info,
 } from 'lucide-react';
-
-const soilTypes = [
-  {
-    id: 'black-soil',
-    name: 'Deep Black Cotton Soil (Vertisol)',
-    texture: 'Clayey, high moisture retentive',
-    distribution: 'Bailhongal, Saundatti, and northern Belagavi',
-    phRange: '7.5 – 8.5 (Slightly alkaline)',
-    favorableCrops: 'Cotton, Sugarcane, Maize, Wheat, Chickpea',
-    management: 'Rich in calcium and magnesium. Poor drainage when wet; avoid heavy tillage immediately after rain.',
-  },
-  {
-    id: 'red-loam',
-    name: 'Red Loamy Soil (Alfisols)',
-    texture: 'Medium textured, well drained, porous',
-    distribution: 'Gokak, parts of Chikodi and Belagavi rural',
-    phRange: '6.2 – 7.0 (Slightly acidic to neutral)',
-    favorableCrops: 'Groundnut, Millets, Vegetables, Horticultural fruits',
-    management: 'Moderate nutrient holding capacity. Requires regular addition of farmyard manure (FYM) and balanced NPK.',
-  },
-  {
-    id: 'alluvial',
-    name: 'Alluvial River Basin Soil',
-    texture: 'Loamy to silty, fertile and deep',
-    distribution: 'Ghataprabha and Malaprabha river plains',
-    phRange: '6.8 – 7.6 (Optimal neutral)',
-    favorableCrops: 'Sugarcane, Banana, Tomato, Paddy, Vegetables',
-    management: 'High native fertility. Practice crop rotation and monitor soil organic carbon levels.',
-  },
-];
+import { useLocationContext } from '../../context/LocationContext.jsx';
+import {
+  CROP_NPK_REQUIREMENTS,
+  calculateFertilizerDose,
+  evaluatePh,
+  saveSoilReport,
+  loadSoilReport,
+} from '../../services/soilService.js';
 
 const nutrientsData = [
   {
@@ -78,37 +61,61 @@ const nutrientsData = [
 ];
 
 const SoilPage = () => {
-  const [phInput, setPhInput] = useState('7.0');
+  const { city, district, state, formattedName, isGlobal } = useLocationContext();
+
+  // Soil Test Values State
+  const [targetCrop, setTargetCrop] = useState('maize');
+  const [areaAcres, setAreaAcres] = useState(2.0);
+  const [phInput, setPhInput] = useState(7.0);
+  const [nInput, setNInput] = useState(260); // kg/ha
+  const [pInput, setPInput] = useState(16); // kg/ha
+  const [kInput, setKInput] = useState(180); // kg/ha
+  const [ocInput, setOcInput] = useState(0.55); // %
+  const [savedSuccess, setSavedSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const phValue = parseFloat(phInput) || 7.0;
+  // Load previously saved soil report if available
+  useEffect(() => {
+    const existing = loadSoilReport();
+    if (existing) {
+      if (existing.ph) setPhInput(existing.ph);
+      if (existing.n) setNInput(existing.n);
+      if (existing.p) setPInput(existing.p);
+      if (existing.k) setKInput(existing.k);
+      if (existing.oc) setOcInput(existing.oc);
+      if (existing.cropKey) setTargetCrop(existing.cropKey);
+      if (existing.areaAcres) setAreaAcres(existing.areaAcres);
+    }
+  }, []);
 
-  const getPhStatus = (val) => {
-    if (val < 6.0) {
-      return {
-        label: 'Strongly Acidic (pH < 6.0)',
-        status: 'warning',
-        color: 'text-amber-800 bg-amber-50 border-amber-200',
-        advice: 'Phosphorus and calcium availability is restricted. Apply agricultural lime (200–300 kg/acre) based on soil test to raise pH toward neutral.',
-      };
-    } else if (val >= 6.0 && val <= 7.5) {
-      return {
-        label: 'Optimal Soil pH Range (6.0 – 7.5)',
-        status: 'ideal',
-        color: 'text-[#14532D] bg-[#DCFCE7] border-emerald-300',
-        advice: 'Excellent condition for nutrient uptake. Most primary macronutrients (N, P, K) and soil microbes function at maximum efficiency.',
-      };
-    } else {
-      return {
-        label: 'Alkaline Soil (pH > 7.5)',
-        status: 'warning',
-        color: 'text-rose-800 bg-rose-50 border-rose-200',
-        advice: 'Micronutrient deficiencies (Zinc, Iron) are common. Incorporate agricultural gypsum, green manure (sunn hemp), and acidic organic compost.',
-      };
+  // Scientific calculation using ICAR Soil Test Crop Response (STCR) equations
+  const calculation = useMemo(() => {
+    return calculateFertilizerDose({
+      cropKey: targetCrop,
+      nVal: Number(nInput) || 280,
+      pVal: Number(pInput) || 15,
+      kVal: Number(kInput) || 150,
+      phVal: Number(phInput) || 7.0,
+      areaAcres: Number(areaAcres) || 1,
+    });
+  }, [targetCrop, nInput, pInput, kInput, phInput, areaAcres]);
+
+  const handleSaveReport = () => {
+    const success = saveSoilReport({
+      cropKey: targetCrop,
+      areaAcres,
+      ph: phInput,
+      n: nInput,
+      p: pInput,
+      k: kInput,
+      oc: ocInput,
+      district: district || city || 'Regional',
+    });
+    if (success) {
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
     }
   };
-
-  const phStatus = getPhStatus(phValue);
 
   const filteredNutrients = nutrientsData.filter(
     (n) =>
@@ -117,6 +124,8 @@ const SoilPage = () => {
       n.deficiency.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const regionLabel = isGlobal ? 'Regional' : (district || city || 'Local');
+
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       {/* Header */}
@@ -124,102 +133,217 @@ const SoilPage = () => {
         <div>
           <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#15803D] bg-[#DCFCE7] px-2.5 py-1 rounded-md mb-2">
             <Layers className="w-3.5 h-3.5" />
-            <span>Soil Health & Fertilizer Guidance</span>
+            <span>ICAR Soil Test Crop Response (STCR) Guidance</span>
           </div>
           <h1 className="text-2xl font-bold text-[#14532D]">Soil & Fertilizers</h1>
           <p className="text-sm text-[#64748B] mt-1">
-            Understand soil pH, nutrient balance, organic amendments, and recommended fertilizer application timings.
+            Scientific soil health card calculator, precise commercial fertilizer dosing, and organic biology management for {formattedName}.
           </p>
         </div>
       </div>
 
-      {/* Soil pH Checker & Organic Carbon Card */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        {/* pH Checker */}
-        <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <FlaskConical className="w-5 h-5 text-[#15803D]" />
-                <h2 className="text-base font-bold text-[#1F2937]">
-                  Soil pH Advisory Calculator
-                </h2>
-              </div>
-              <span className="text-xs text-[#64748B]">Scale: 0 to 14</span>
-            </div>
+      {/* Scientific Transparency Notice */}
+      <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/70 text-xs text-blue-900 flex items-start gap-3">
+        <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+        <div className="leading-relaxed">
+          <span className="font-bold">Agronomic Transparency Principle: </span>
+          Soil chemistry and nutrient levels (N, P, K, pH) cannot be measured accurately via GPS satellites alone. Real agricultural recommendations require your official Soil Health Card or laboratory soil test values entered below.
+        </div>
+      </div>
 
-            <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4">
-              <label className="text-xs font-semibold text-[#1F2937] block">
-                Enter Soil Test pH Value:
-                <input
-                  type="number"
-                  min="3.0"
-                  max="11.0"
-                  step="0.1"
-                  value={phInput}
-                  onChange={(e) => setPhInput(e.target.value)}
-                  className="mt-1 w-32 rounded-lg border border-slate-200 bg-[#F8FAF6] px-3 py-2 text-lg font-bold text-[#1F2937] outline-none focus:border-[#15803D]"
-                />
-              </label>
-
-              <div className="flex-1">
-                <input
-                  type="range"
-                  min="4.5"
-                  max="9.5"
-                  step="0.1"
-                  value={phValue}
-                  onChange={(e) => setPhInput(e.target.value)}
-                  className="w-full accent-[#15803D] cursor-pointer"
-                />
-                <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                  <span>Acidic (4.5)</span>
-                  <span className="font-bold text-[#15803D]">Neutral (7.0)</span>
-                  <span>Alkaline (9.5)</span>
-                </div>
-              </div>
+      {/* Soil Health Card & STCR Fertilizer Calculator */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Input Panel */}
+        <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <FlaskConical className="w-5 h-5 text-[#15803D]" />
+              <h2 className="text-base font-bold text-[#1F2937]">Soil Test Values Input</h2>
             </div>
-
-            <div className={`mt-5 p-4 rounded-xl border ${phStatus.color}`}>
-              <span className="text-xs font-bold block mb-1">{phStatus.label}</span>
-              <p className="text-xs leading-relaxed">{phStatus.advice}</p>
-            </div>
+            <span className="text-[11px] text-slate-400">Lab Test Report</span>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-[#64748B]">
-            <span>Optimal range for Belagavi crops: 6.5 – 7.5</span>
-            <span className="text-[#15803D] font-medium">UAS Dharwad Standard</span>
+          <div className="space-y-3.5 text-xs">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Target Crop</label>
+                <select
+                  value={targetCrop}
+                  onChange={(e) => setTargetCrop(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-[#15803D]"
+                >
+                  {Object.entries(CROP_NPK_REQUIREMENTS).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Field Area (Acres)</label>
+                <input
+                  type="number"
+                  min="0.25"
+                  max="100"
+                  step="0.25"
+                  value={areaAcres}
+                  onChange={(e) => setAreaAcres(Number(e.target.value))}
+                  className="w-full rounded-lg border border-slate-200 bg-[#F8FAF6] px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#15803D]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="font-semibold text-slate-700">Soil pH: {phInput}</label>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${calculation.phStatus.color}`}>
+                  {calculation.phStatus.status}
+                </span>
+              </div>
+              <input
+                type="range"
+                min="4.5"
+                max="9.5"
+                step="0.1"
+                value={phInput}
+                onChange={(e) => setPhInput(Number(e.target.value))}
+                className="w-full accent-[#15803D] cursor-pointer"
+              />
+              <div className="flex justify-between text-[10px] text-slate-400">
+                <span>Acidic (4.5)</span>
+                <span className="text-emerald-700 font-bold">Neutral (7.0)</span>
+                <span>Alkaline (9.5)</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2.5 pt-1">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Avail. N (kg/ha)</label>
+                <input
+                  type="number"
+                  value={nInput}
+                  onChange={(e) => setNInput(Number(e.target.value))}
+                  className="w-full rounded-lg border border-slate-200 bg-[#F8FAF6] px-2.5 py-1.5 text-xs font-bold text-slate-800 outline-none focus:border-[#15803D]"
+                />
+                <span className={`text-[9px] font-bold block mt-1 px-1 py-0.5 text-center rounded border ${calculation.ratings.nitrogen.badge}`}>
+                  {calculation.ratings.nitrogen.rating} N
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Avail. P (kg/ha)</label>
+                <input
+                  type="number"
+                  value={pInput}
+                  onChange={(e) => setPInput(Number(e.target.value))}
+                  className="w-full rounded-lg border border-slate-200 bg-[#F8FAF6] px-2.5 py-1.5 text-xs font-bold text-slate-800 outline-none focus:border-[#15803D]"
+                />
+                <span className={`text-[9px] font-bold block mt-1 px-1 py-0.5 text-center rounded border ${calculation.ratings.phosphorus.badge}`}>
+                  {calculation.ratings.phosphorus.rating} P
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Avail. K (kg/ha)</label>
+                <input
+                  type="number"
+                  value={kInput}
+                  onChange={(e) => setKInput(Number(e.target.value))}
+                  className="w-full rounded-lg border border-slate-200 bg-[#F8FAF6] px-2.5 py-1.5 text-xs font-bold text-slate-800 outline-none focus:border-[#15803D]"
+                />
+                <span className={`text-[9px] font-bold block mt-1 px-1 py-0.5 text-center rounded border ${calculation.ratings.potassium.badge}`}>
+                  {calculation.ratings.potassium.rating} K
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">Organic Carbon (OC %)</label>
+              <input
+                type="number"
+                min="0.1"
+                max="2.5"
+                step="0.05"
+                value={ocInput}
+                onChange={(e) => setOcInput(Number(e.target.value))}
+                className="w-full rounded-lg border border-slate-200 bg-[#F8FAF6] px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:border-[#15803D]"
+              />
+            </div>
+
+            <div className="pt-2 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={handleSaveReport}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#15803D] text-white font-semibold text-xs hover:bg-[#14532D] transition-colors cursor-pointer"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Save Soil Test Record</span>
+              </button>
+              {savedSuccess && (
+                <span className="text-[11px] font-bold text-[#15803D]">Saved to profile!</span>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Organic Matter & Soil Care */}
-        <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <Sprout className="w-5 h-5 text-[#15803D]" />
-              <h2 className="text-base font-bold text-[#1F2937]">
-                Organic Carbon & Soil Biology
+        {/* Output: Scientific Fertilizer Dosage */}
+        <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+              <h2 className="text-base font-bold text-[#14532D]">
+                Recommended Fertilizer Dosage ({calculation.cropName})
               </h2>
+              <p className="text-[11px] text-[#64748B]">For {calculation.areaAcres} Acre(s) holding</p>
+            </div>
+            <span className="text-xs font-semibold text-[#15803D] bg-[#DCFCE7] px-2.5 py-1 rounded-md">
+              ICAR STCR Equation
+            </span>
+          </div>
+
+          {/* Bag count cards */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="p-3.5 rounded-xl bg-[#F8FAF6] border border-slate-200 text-center">
+              <span className="text-xs text-[#64748B] font-semibold block">Urea (46% N)</span>
+              <span className="text-2xl font-extrabold text-[#14532D] my-1 block">
+                {calculation.bags.urea45kg}
+              </span>
+              <span className="text-[10px] text-slate-400">Bags (45 kg each)</span>
             </div>
 
-            <p className="text-xs text-[#64748B] mt-4 leading-relaxed">
-              Target soil organic carbon is <span className="font-semibold text-[#1F2937]">&gt; 0.75%</span>. Most cultivated soils in North Karnataka range between 0.35% and 0.55%, causing lower fertilizer efficiency.
-            </p>
+            <div className="p-3.5 rounded-xl bg-[#F8FAF6] border border-slate-200 text-center">
+              <span className="text-xs text-[#64748B] font-semibold block">DAP (18:46:0)</span>
+              <span className="text-2xl font-extrabold text-[#14532D] my-1 block">
+                {calculation.bags.dap50kg}
+              </span>
+              <span className="text-[10px] text-slate-400">Bags (50 kg each)</span>
+            </div>
 
-            <div className="mt-4 space-y-2 text-xs">
-              <div className="flex items-start gap-2 p-2.5 bg-[#F8FAF6] rounded-lg border border-slate-100">
-                <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0 mt-0.5" />
-                <span>Incorporate 8–10 tonnes well-decomposed FYM or compost per acre before sowing.</span>
-              </div>
-              <div className="flex items-start gap-2 p-2.5 bg-[#F8FAF6] rounded-lg border border-slate-100">
-                <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0 mt-0.5" />
-                <span>Practice green manuring with Sunnhemp or Dhaincha and incorporate at 45 days.</span>
-              </div>
+            <div className="p-3.5 rounded-xl bg-[#F8FAF6] border border-slate-200 text-center">
+              <span className="text-xs text-[#64748B] font-semibold block">MOP Potash (60% K)</span>
+              <span className="text-2xl font-extrabold text-[#14532D] my-1 block">
+                {calculation.bags.mop50kg}
+              </span>
+              <span className="text-[10px] text-slate-400">Bags (50 kg each)</span>
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-[#64748B]">
-            Regular compost addition increases water retention by up to 25%.
+          {/* Organic Manure & Critical Growth Stages */}
+          <div className="space-y-3 pt-2 text-xs">
+            <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-950">
+              <span className="font-bold block mb-1">🌿 Basal Organic Manure Recommendation:</span>
+              <p>Incorporate {calculation.fymTonnes} Tonnes well-rotted Farmyard Manure (FYM) or compost during final land preparation before sowing.</p>
+            </div>
+
+            <div className="p-3 rounded-lg bg-[#F8FAF6] border border-slate-200 text-slate-800">
+              <span className="font-bold text-[#14532D] block mb-1">⏱️ Split Application & Critical Irrigation Stages:</span>
+              <p className="leading-relaxed">{calculation.criticalStages}</p>
+            </div>
+
+            <div className={`p-3 rounded-lg border ${calculation.phStatus.color}`}>
+              <span className="font-bold block mb-0.5">Soil Amendment Advisory:</span>
+              <p>{calculation.phStatus.action}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -228,43 +352,49 @@ const SoilPage = () => {
       <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
         <div>
           <h2 className="text-lg font-bold text-[#14532D]">
-            Major Soil Formations in Belagavi District
+            Major Soil Formations in {regionLabel} Agro-Zone
           </h2>
           <p className="text-xs text-[#64748B] mt-0.5">
-            Key physical properties, natural drainage, and recommended management practices.
+            Key physical properties, natural drainage, and recommended soil management practices.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {soilTypes.map((st) => (
-            <div
-              key={st.id}
-              className="p-4 bg-[#F8FAF6] rounded-xl border border-slate-200 flex flex-col justify-between"
-            >
-              <div>
-                <h3 className="text-sm font-bold text-[#1F2937]">{st.name}</h3>
-                <span className="text-[11px] text-[#15803D] font-medium block mt-0.5">
-                  pH Range: {st.phRange}
-                </span>
-
-                <div className="mt-3 space-y-1.5 text-xs text-[#64748B]">
-                  <p>
-                    <span className="font-semibold text-[#1F2937]">Where found: </span>
-                    {st.distribution}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-[#1F2937]">Top Crops: </span>
-                    {st.favorableCrops}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-3 pt-2.5 border-t border-slate-200/70 text-xs text-[#1F2937]">
-                <span className="font-semibold text-[#14532D]">Management: </span>
-                {st.management}
-              </div>
+          <div className="p-4 bg-[#F8FAF6] rounded-xl border border-slate-200 flex flex-col justify-between text-xs">
+            <div>
+              <h3 className="text-sm font-bold text-[#1F2937]">Deep Black Cotton Soil (Vertisol)</h3>
+              <span className="text-[11px] text-[#15803D] font-medium block mt-0.5">pH Range: 7.5 – 8.5</span>
+              <p className="mt-2 text-[#64748B]"><span className="font-semibold text-slate-800">Distribution: </span>Deccan traps, northern river plains, and cotton basins.</p>
+              <p className="mt-1 text-[#64748B]"><span className="font-semibold text-slate-800">Suited Crops: </span>Cotton, Sugarcane, Maize, Wheat, Chickpea.</p>
             </div>
-          ))}
+            <div className="mt-3 pt-2 border-t border-slate-200/70 text-slate-700">
+              <span className="font-semibold text-[#14532D]">Management: </span>High clay content; avoid heavy machinery immediately after irrigation.
+            </div>
+          </div>
+
+          <div className="p-4 bg-[#F8FAF6] rounded-xl border border-slate-200 flex flex-col justify-between text-xs">
+            <div>
+              <h3 className="text-sm font-bold text-[#1F2937]">Red Loamy Soil (Alfisol)</h3>
+              <span className="text-[11px] text-[#15803D] font-medium block mt-0.5">pH Range: 6.2 – 7.0</span>
+              <p className="mt-2 text-[#64748B]"><span className="font-semibold text-slate-800">Distribution: </span>Upland plateaus, transitional belts, and hill slopes.</p>
+              <p className="mt-1 text-[#64748B]"><span className="font-semibold text-slate-800">Suited Crops: </span>Groundnut, Millets, Vegetables, Tomato, Chilli.</p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-200/70 text-slate-700">
+              <span className="font-semibold text-[#14532D]">Management: </span>Porous with high drainage; apply FYM and split nitrogen fertilizer.
+            </div>
+          </div>
+
+          <div className="p-4 bg-[#F8FAF6] rounded-xl border border-slate-200 flex flex-col justify-between text-xs">
+            <div>
+              <h3 className="text-sm font-bold text-[#1F2937]">Alluvial River Plain Soil (Inceptisol)</h3>
+              <span className="text-[11px] text-[#15803D] font-medium block mt-0.5">pH Range: 6.8 – 7.6</span>
+              <p className="mt-2 text-[#64748B]"><span className="font-semibold text-slate-800">Distribution: </span>River floodplains, valley bottoms, and canal networks.</p>
+              <p className="mt-1 text-[#64748B]"><span className="font-semibold text-slate-800">Suited Crops: </span>Paddy (Rice), Sugarcane, Banana, Vegetables.</p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-200/70 text-slate-700">
+              <span className="font-semibold text-[#14532D]">Management: </span>High natural fertility; maintain balanced potassium and organic residues.
+            </div>
+          </div>
         </div>
       </div>
 
@@ -272,9 +402,7 @@ const SoilPage = () => {
       <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-100">
           <div>
-            <h2 className="text-lg font-bold text-[#14532D]">
-              Essential Nutrients & Deficiency Guide
-            </h2>
+            <h2 className="text-lg font-bold text-[#14532D]">Essential Nutrients & Deficiency Guide</h2>
             <p className="text-xs text-[#64748B] mt-0.5">
               Recognize deficiency symptoms and apply correct fertilizer sources at the proper growth stage.
             </p>

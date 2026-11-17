@@ -9,31 +9,46 @@ import {
   MessageSquare,
   CheckCircle2,
   ExternalLink,
+  MapPin,
+  Navigation,
+  Globe,
 } from 'lucide-react';
+import { useLocationContext } from '../../context/LocationContext.jsx';
 
 const faqs = [
   {
     q: 'How are the crop suitability recommendations calculated?',
-    a: 'Recommendations are based on your selected taluk (e.g. Belagavi, Gokak), predominant soil type (Black, Red Loamy, Alluvial), current season (Kharif, Rabi, Summer), and water availability according to UAS Dharwad agronomic data.',
+    a: 'Recommendations are dynamically derived from your verified agro-climatic region, predominant regional soil type (Black, Red Loamy, Sandy Loam, Clay), active season (Kharif, Rabi, Summer), and water availability according to ICAR and State Agricultural University agronomic packages of practices.',
   },
   {
     q: 'Where do the APMC market prices come from?',
-    a: 'Market prices reflect official daily modal and range rates published by the Karnataka State Agricultural Marketing Board (KSAMB) for major APMC yards in Belagavi district.',
+    a: 'Market prices reflect official daily modal, minimum, and maximum rates from the Agmarknet agricultural marketing portal and Karnataka State Agricultural Marketing Board (KSAMB) APMC market yards.',
   },
   {
-    q: 'How can I apply for the PMKSY Drip Irrigation Subsidy?',
-    a: 'Small and marginal farmers in Karnataka can receive up to 90% subsidy for drip irrigation. Check the Government Schemes module for step-by-step documentation, or visit your local Raitha Samparka Kendra.',
+    q: 'How does AgriSphere detect my live location?',
+    a: 'AgriSphere requests high-accuracy browser GPS coordinates with your consent and runs reverse geocoding via OpenStreetMap Nominatim. If location permission is withheld, you can manually choose any regional agricultural hub from the top header.',
   },
   {
     q: 'How do I add or adjust my farm plot on the map?',
-    a: 'Go to the "My Farm" page from the left sidebar, click "Adjust Farm Pin on Map", and simply click on your land coordinates to save the marker.',
+    a: 'Navigate to "My Farm" from the sidebar. Click "Adjust Farm Pin on Map" and select your land boundary coordinates to persist your plot survey numbers, area, and crop records.',
   },
 ];
 
 const HelpPage = () => {
+  const {
+    city,
+    district,
+    state,
+    formattedName,
+    isGps,
+    isGlobal,
+  } = useLocationContext();
+
   const [openFaq, setOpenFaq] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [queryText, setQueryText] = useState('');
+
+  const districtName = district || city || 'Regional';
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -53,20 +68,35 @@ const HelpPage = () => {
           </div>
           <h1 className="text-2xl font-bold text-[#14532D]">Help & Support</h1>
           <p className="text-sm text-[#64748B] mt-1">
-            Official farmer helplines, platform user guides, frequently asked questions, and direct support assistance.
+            Official farmer helplines, platform user guides, and direct support assistance for{' '}
+            <span className="font-semibold text-slate-800">{formattedName}</span>.
           </p>
+        </div>
+
+        {/* Location Badge */}
+        <div className="flex items-center gap-1.5 bg-[#F8FAF6] border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-[#1F2937] shrink-0 self-start sm:self-auto">
+          {isGps ? (
+            <Navigation className="w-3.5 h-3.5 text-[#15803D]" />
+          ) : isGlobal ? (
+            <Globe className="w-3.5 h-3.5 text-slate-500" />
+          ) : (
+            <MapPin className="w-3.5 h-3.5 text-[#15803D]" />
+          )}
+          <span className="font-semibold truncate max-w-[160px]">{formattedName}</span>
         </div>
       </div>
 
       {/* Kisan Helplines Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col justify-between">
+        <div className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col justify-between shadow-2xs">
           <div>
             <div className="w-10 h-10 rounded-lg bg-[#DCFCE7] text-[#15803D] flex items-center justify-center mb-3">
               <Phone className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-bold text-[#1F2937]">Kisan Call Centre (KCC)</h3>
-            <p className="text-xs text-[#64748B] mt-1">Toll-free national farmer helpline available in Kannada and English.</p>
+            <p className="text-xs text-[#64748B] mt-1">
+              National toll-free agricultural helpline answering farmer queries in 22 regional languages.
+            </p>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100">
             <a
@@ -79,32 +109,36 @@ const HelpPage = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col justify-between">
+        <div className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col justify-between shadow-2xs">
           <div>
             <div className="w-10 h-10 rounded-lg bg-[#DCFCE7] text-[#15803D] flex items-center justify-center mb-3">
               <Phone className="w-5 h-5" />
             </div>
-            <h3 className="text-sm font-bold text-[#1F2937]">Belagavi Agri Helpdesk</h3>
-            <p className="text-xs text-[#64748B] mt-1">Joint Director of Agriculture Office, Belagavi district extension desk.</p>
+            <h3 className="text-sm font-bold text-[#1F2937]">{districtName} Agri Helpdesk</h3>
+            <p className="text-xs text-[#64748B] mt-1">
+              Joint Director of Agriculture Office & District Agriculture Extension Counter.
+            </p>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100">
             <a
               href="tel:08312407215"
               className="text-base font-extrabold text-[#15803D] hover:underline"
             >
-              0831-2407215
+              0831-2407215 / 1800-425-3553
             </a>
             <span className="text-[10px] text-slate-400 block mt-0.5">Mon – Fri: 10 AM – 5:30 PM</span>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col justify-between">
+        <div className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col justify-between shadow-2xs">
           <div>
             <div className="w-10 h-10 rounded-lg bg-[#DCFCE7] text-[#15803D] flex items-center justify-center mb-3">
               <Mail className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-bold text-[#1F2937]">Email Assistance</h3>
-            <p className="text-xs text-[#64748B] mt-1">Submit feedback, report app issues, or ask agronomy questions.</p>
+            <p className="text-xs text-[#64748B] mt-1">
+              Submit agronomy questions, report app bugs, or suggest local market mandis.
+            </p>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100">
             <a
@@ -141,9 +175,8 @@ const HelpPage = () => {
                     <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
                   )}
                 </button>
-
                 {isOpen && (
-                  <p className="text-xs text-[#64748B] mt-2 leading-relaxed pl-1">
+                  <p className="text-xs text-[#64748B] leading-relaxed mt-2 pt-1 border-t border-slate-50">
                     {faq.a}
                   </p>
                 )}
@@ -153,32 +186,38 @@ const HelpPage = () => {
         </div>
       </div>
 
-      {/* Submit Query Form */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <h2 className="text-lg font-bold text-[#14532D] mb-1">Send a Message to Support</h2>
-        <p className="text-xs text-[#64748B] mb-4">Have an issue or suggestion? Send us a note.</p>
+      {/* Direct Query Box */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-3">
+        <h2 className="text-base font-bold text-[#14532D]">Submit an Agronomic or Technical Query</h2>
+        <p className="text-xs text-[#64748B]">
+          Have a question about fertilizer scheduling, local mandi arrivals, or scheme enrollment? Send your question to our field agronomists.
+        </p>
 
         {submitted ? (
-          <div className="p-4 rounded-lg bg-[#DCFCE7] border border-emerald-200 text-xs text-[#14532D] flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
-            <span>Thank you, Ramesh Patil. Your message has been received by our Belagavi support team.</span>
+          <div className="p-4 rounded-lg bg-[#DCFCE7] border border-emerald-200 flex items-center gap-2.5 text-xs text-[#14532D]">
+            <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0" />
+            <span className="font-semibold">
+              Thank you! Your query has been recorded. Our extension team will review it.
+            </span>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-3 text-xs">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <textarea
               rows="3"
               required
+              placeholder="Type your question here (e.g. Recommended seed rate for Rabi maize in black soil)..."
               value={queryText}
               onChange={(e) => setQueryText(e.target.value)}
-              placeholder="Describe your question or difficulty..."
               className="w-full rounded-lg border border-slate-200 bg-[#F8FAF6] p-3 text-xs text-[#1F2937] outline-none focus:border-[#15803D]"
             />
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-lg bg-[#15803D] text-white font-semibold hover:bg-[#14532D] transition-colors"
-            >
-              Submit Support Request
-            </button>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-lg bg-[#15803D] text-white text-xs font-bold hover:bg-[#14532D] transition-colors shadow-xs"
+              >
+                Send Question
+              </button>
+            </div>
           </form>
         )}
       </div>

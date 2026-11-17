@@ -9,8 +9,14 @@ import {
   ShieldCheck,
   Award,
 } from 'lucide-react';
+import { useLocationContext } from '../../context/LocationContext.jsx';
 
 const CallToActionBanner = () => {
+  const { state, district, isGlobal } = useLocationContext();
+  const sourceLabel = isGlobal
+    ? 'ICAR & National Agmarknet Sourced'
+    : `${state || district || 'ICAR'} & APMC Sourced`;
+
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-agri-900 via-agri-800 to-emerald-900 p-6 sm:p-8 lg:p-10 text-white shadow-md border border-agri-700/50">
       <Sprout className="absolute -right-8 -bottom-10 w-64 h-64 text-white/5 pointer-events-none rotate-12" />
@@ -39,7 +45,7 @@ const CallToActionBanner = () => {
             </span>
             <span className="flex items-center gap-1.5 font-medium">
               <Award className="w-4 h-4 text-agri-400" />
-              UAS Dharwad & Belagavi APMC Sourced
+              {sourceLabel}
             </span>
           </div>
         </div>

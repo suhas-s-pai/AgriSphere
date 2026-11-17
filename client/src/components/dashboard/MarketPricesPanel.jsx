@@ -1,23 +1,29 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { useLocationContext } from '../../context/LocationContext.jsx';
 
-const marketData = [
-  { crop: 'Tomato', market: 'Belagavi APMC', price: '₹25 / kg', change: '+12%', isUp: true },
-  { crop: 'Onion', market: 'Belagavi APMC', price: '₹18 / kg', change: '-5%', isUp: false },
-  { crop: 'Maize', market: 'Belagavi APMC', price: '₹22 / kg', change: '+8%', isUp: true },
-  { crop: 'Rice (Paddy)', market: 'Belagavi APMC', price: '₹28 / kg', change: '+3%', isUp: true },
-  { crop: 'Cotton', market: 'Belagavi APMC', price: '₹72 / kg', change: '+1.5%', isUp: true },
+const baseMarketCrops = [
+  { crop: 'Tomato', price: '₹25 / kg', change: '+12%', isUp: true },
+  { crop: 'Onion', price: '₹18 / kg', change: '-5%', isUp: false },
+  { crop: 'Maize', price: '₹22 / kg', change: '+8%', isUp: true },
+  { crop: 'Rice (Paddy)', price: '₹28 / kg', change: '+3%', isUp: true },
+  { crop: 'Cotton', price: '₹72 / kg', change: '+1.5%', isUp: true },
 ];
 
 const MarketPricesPanel = () => {
+  const { city, district, isGlobal } = useLocationContext();
+  const locationLabel = isGlobal ? 'Regional Mandi' : `${city || district || 'Regional'} APMC`;
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-6">
       {/* Header */}
       <div className="flex items-center justify-between pb-4 border-b border-slate-100">
         <div>
           <h2 className="text-xl font-bold text-[#14532D]">Market Prices</h2>
-          <p className="text-xs text-[#64748B] mt-0.5">Belagavi APMC Market Rates</p>
+          <p className="text-xs text-[#64748B] mt-0.5">
+            {isGlobal ? 'Regional APMC Benchmark Rates' : `${locationLabel} Market Rates`}
+          </p>
         </div>
         <NavLink
           to="/market-prices"
@@ -40,10 +46,10 @@ const MarketPricesPanel = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {marketData.map((item) => (
+            {baseMarketCrops.map((item) => (
               <tr key={item.crop} className="hover:bg-[#F8FAF6] transition-colors">
                 <td className="py-3.5 px-4 font-semibold text-[#1F2937]">{item.crop}</td>
-                <td className="py-3.5 px-4 text-[#64748B] text-xs">{item.market}</td>
+                <td className="py-3.5 px-4 text-[#64748B] text-xs">{locationLabel}</td>
                 <td className="py-3.5 px-4 font-bold text-[#1F2937]">{item.price}</td>
                 <td className="py-3.5 px-4 text-right">
                   <span

@@ -1,35 +1,40 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { ArrowRight, CloudRain, TrendingUp, Landmark, Bell } from 'lucide-react';
-
-const alerts = [
-  {
-    id: 1,
-    title: 'Light rain expected this Thursday in Belagavi',
-    description: 'Ensure harvested grains and crops are protected from moisture.',
-    time: '2 hours ago',
-    icon: CloudRain,
-    path: '/weather',
-  },
-  {
-    id: 2,
-    title: 'Tomato prices increased by 12% at Belagavi APMC',
-    description: 'Demand remains high in nearby markets. Current rate ₹25/kg.',
-    time: '5 hours ago',
-    icon: TrendingUp,
-    path: '/market-prices',
-  },
-  {
-    id: 3,
-    title: 'New drip irrigation subsidy open for application',
-    description: 'State agriculture portal is accepting applications for subsidy.',
-    time: '1 day ago',
-    icon: Landmark,
-    path: '/government-schemes',
-  },
-];
+import { useLocationContext } from '../../context/LocationContext.jsx';
 
 const RecentAlertsPanel = () => {
+  const { city, district, isGlobal } = useLocationContext();
+  const locationName = isGlobal ? 'your region' : (city || district || 'your region');
+  const marketName = isGlobal ? 'Regional' : (city || district || 'Local');
+
+  const alerts = [
+    {
+      id: 1,
+      title: `Weather alert: light rain expected this week in ${locationName}`,
+      description: 'Ensure harvested grains and crops are protected from moisture.',
+      time: '2 hours ago',
+      icon: CloudRain,
+      path: '/weather',
+    },
+    {
+      id: 2,
+      title: `Tomato prices increased by 12% at ${marketName} APMC`,
+      description: 'Demand remains high in nearby markets. Current rate ₹25/kg.',
+      time: '5 hours ago',
+      icon: TrendingUp,
+      path: '/market-prices',
+    },
+    {
+      id: 3,
+      title: 'New drip irrigation subsidy open for application',
+      description: 'State agriculture portal is accepting applications for subsidy.',
+      time: '1 day ago',
+      icon: Landmark,
+      path: '/government-schemes',
+    },
+  ];
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-6">
       {/* Header */}

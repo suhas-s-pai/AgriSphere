@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar.jsx';
 import Header from './Header.jsx';
+import { useLocationContext } from '../../context/LocationContext.jsx';
 
 const MainLayout = () => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const { formattedName, isGlobal } = useLocationContext();
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#F8FAF6] text-[#1F2937] antialiased">
@@ -37,7 +39,7 @@ const MainLayout = () => {
                 <span>Smart Agriculture Platform</span>
               </div>
               <p className="text-[#64748B]">
-                Belagavi, Karnataka
+                {isGlobal ? 'Regional Agriculture Platform' : formattedName}
               </p>
             </div>
           </footer>

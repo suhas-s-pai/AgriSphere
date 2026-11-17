@@ -1,39 +1,47 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-
-const recommendations = [
-  {
-    id: 1,
-    title: 'Best Crops to Grow',
-    description: 'Recommended crops suitable for current season in Belagavi.',
-    image: '/assets/Crop.png',
-    path: '/crops',
-  },
-  {
-    id: 2,
-    title: 'Irrigation Tips',
-    description: 'Simple methods to save water and improve crop yield.',
-    image: '/assets/Irr.png',
-    path: '/farming-tools',
-  },
-  {
-    id: 3,
-    title: 'Crop Diseases',
-    description: 'Identify common tomato and vegetable crop issues early.',
-    image: '/assets/Dls.png',
-    path: '/diseases-pests',
-  },
-  {
-    id: 4,
-    title: 'Market Trends',
-    description: 'Check latest commodity price trends in Karnataka markets.',
-    image: '/assets/Market.png',
-    path: '/market-prices',
-  },
-];
+import { useLocationContext } from '../../context/LocationContext.jsx';
 
 const RecommendedSection = () => {
+  const { city, district, state, isGlobal } = useLocationContext();
+
+  const activeRegion = isGlobal ? 'your region' : (city || district || 'your region');
+  const marketRegion = isGlobal ? 'regional' : (state || district || 'regional');
+
+  const recommendations = [
+    {
+      id: 1,
+      title: 'Best Crops to Grow',
+      description: isGlobal 
+        ? 'Recommended crops suitable for the current agricultural season.' 
+        : `Recommended crops suitable for current season in ${activeRegion}.`,
+      image: '/assets/Crop.png',
+      path: '/crops',
+    },
+    {
+      id: 2,
+      title: 'Irrigation Tips',
+      description: 'Simple methods to save water and improve crop yield.',
+      image: '/assets/Irr.png',
+      path: '/farming-tools',
+    },
+    {
+      id: 3,
+      title: 'Crop Diseases',
+      description: 'Identify common tomato and vegetable crop issues early.',
+      image: '/assets/Dls.png',
+      path: '/diseases-pests',
+    },
+    {
+      id: 4,
+      title: 'Market Trends',
+      description: `Check latest commodity price trends in ${marketRegion} markets.`,
+      image: '/assets/Market.png',
+      path: '/market-prices',
+    },
+  ];
+
   return (
     <div>
       <div className="mb-5">

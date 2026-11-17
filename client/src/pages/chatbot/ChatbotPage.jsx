@@ -1,225 +1,221 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  Bot,
-  Send,
-  User,
-  Sparkles,
-  Sprout,
-  AlertTriangle,
-  Landmark,
-  RotateCcw,
-} from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { ExternalLink, RefreshCw, Bot, AlertCircle, Navigation, MapPin, Globe, AlertTriangle } from 'lucide-react';
+import { useLocationContext } from '../../context/LocationContext.jsx';
 
-const suggestedPrompts = [
-  { text: 'Which crops are best suited for Belagavi Kharif season?', icon: Sprout },
-  { text: 'How do I identify and manage Tomato Early Blight?', icon: AlertTriangle },
-  { text: 'What is the optimal NPK fertilizer schedule for Paddy?', icon: Sparkles },
-  { text: 'How can I apply for the PMKSY Drip Irrigation subsidy?', icon: Landmark },
-];
-
-const initialMessages = [
-  {
-    id: 1,
-    sender: 'bot',
-    text: 'Namaskara! I am your AgriSphere Agriculture Assistant. Ask me anything about crop suitability, disease symptoms, weather guidelines, fertilizer dosage, or government farming schemes in Karnataka.',
-    time: 'Just now',
-  },
-];
-
-const knowledgeBase = [
-  {
-    keywords: ['belagavi', 'crop', 'kharif', 'suitable', 'season'],
-    reply: "Based on Belagavi district's black clayey loam and red sandy soils with average 26°C monsoon temperatures, the top recommended crops are:\n1. Maize (Hybrid 900M, CP-818) – high drought resilience and reliable APMC market demand\n2. Tomato (S-22, Shivam) – high profitability in well-drained loamy soils\n3. Paddy / Rice (Jaya, Sona Masoori) – ideal for assured irrigation areas like Khanapur\n4. Groundnut & Soybean – excellent for nitrogen fixation and soil health.",
-  },
-  {
-    keywords: ['blight', 'tomato', 'disease', 'fungus'],
-    reply: 'Tomato Early Blight (Alternaria solani) causes target-board concentric brown rings on older lower leaves.\nManagement steps:\n• Spray Mancozeb 75% WP @ 2g/L or copper oxychloride @ 2.5g/L at initial symptom stage.\n• For organic treatment, spray Neem oil 5ml/L.\n• Maintain proper staking and avoid overhead flood irrigation.',
-  },
-  {
-    keywords: ['fertilizer', 'npk', 'paddy', 'rice', 'urea'],
-    reply: 'Recommended NPK dosage for Paddy in Karnataka:\n• Standard RDF: 100 kg Nitrogen, 50 kg P2O5, 50 kg K2O per hectare.\n• Basal at transplanting: 50% N + 100% P + 50% K.\n• Top dressing at tillering (30 days): 25% N.\n• Top dressing at panicle initiation: 25% N + 50% K.\nApply Zinc Sulphate @ 20 kg/ha in deficient soils.',
-  },
-  {
-    keywords: ['scheme', 'drip', 'subsidy', 'pmksy', 'irrigation'],
-    reply: 'Under the Pradhan Mantri Krishi Sinchayee Yojana (PMKSY) – Per Drop More Crop:\n• Small & Marginal Farmers in Karnataka receive up to 90% subsidy for micro-drip units.\n• General category farmers receive up to 75% subsidy.\n• Required documents: RTC/Pahani, Aadhaar card, bank passbook, and water source certificate.\n• Apply online at raitamitra.karnataka.gov.in or visit your nearest Raitha Samparka Kendra (RSK).',
-  },
-];
+const CHATBOT_URL = 'https://agrisphere-chatbot.onrender.com/';
 
 const ChatbotPage = () => {
-  const [messages, setMessages] = useState(initialMessages);
-  const [inputMessage, setInputMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef(null);
+  const {
+    source,
+    latitude,
+    longitude,
+    city,
+    district,
+    state,
+    country,
+    formattedName,
+    isGps,
+    isManual,
+    isGlobal,
+    permissionStatus,
+  } = useLocationContext();
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [iframeKey, setIframeKey] = useState(0);
+  const iframeRef = useRef(null);
+
+  // Construct location-aware query params to pass to the deployed chatbot
+  const targetChatbotUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    if (isGps && latitude != null && longitude != null) {
+      params.set('source', 'gps');
+      params.set('lat', latitude.toString());
+      params.set('lng', longitude.toString());
+      if (city) params.set('city', city);
+      if (district) params.set('district', district);
+      if (state) params.set('state', state);
+      if (country) params.set('country', country);
+      params.set('locationName', formattedName);
+    } else if (isManual && formattedName) {
+      params.set('source', 'manual');
+      if (latitude != null && longitude != null) {
+        params.set('lat', latitude.toString());
+        params.set('lng', longitude.toString());
+      }
+      if (city) params.set('city', city);
+      if (district) params.set('district', district);
+      if (state) params.set('state', state);
+      if (country) params.set('country', country);
+      params.set('locationName', formattedName);
+    } else if (isGlobal) {
+      params.set('source', 'global');
+      params.set('locationName', 'Global Mode');
+    }
+    const queryString = params.toString();
+    return queryString ? `${CHATBOT_URL}?${queryString}` : CHATBOT_URL;
+  }, [isGps, isManual, isGlobal, latitude, longitude, city, district, state, country, formattedName]);
+
+  // Synchronize location update via postMessage to iframe
+  const sendLocationSyncMessage = useCallback(() => {
+    if (iframeRef.current && iframeRef.current.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        {
+          type: 'AGRISPHERE_LOCATION_SYNC',
+          payload: {
+            source,
+            latitude: isGps || isManual ? latitude : null,
+            longitude: isGps || isManual ? longitude : null,
+            city,
+            district,
+            state,
+            country,
+            formattedName,
+            isGlobal,
+            permissionStatus,
+          },
+        },
+        '*'
+      );
+    }
+  }, [source, latitude, longitude, city, district, state, country, formattedName, isGlobal, permissionStatus, isGps, isManual]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
+    sendLocationSyncMessage();
+  }, [sendLocationSyncMessage]);
 
-  const handleSend = (textToSend = inputMessage) => {
-    const text = textToSend.trim();
-    if (!text) return;
+  const handleRefresh = () => {
+    setIsLoading(true);
+    setHasError(false);
+    setIframeKey((prev) => prev + 1);
+  };
 
-    const userMsg = {
-      id: Date.now(),
-      sender: 'user',
-      text,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
-    setInputMessage('');
-    setIsTyping(true);
-
-    setTimeout(() => {
-      const lower = text.toLowerCase();
-      const match = knowledgeBase.find((item) =>
-        item.keywords.some((kw) => lower.includes(kw))
-      );
-
-      const replyText = match
-        ? match.reply
-        : `Thank you for your question about "${text}". For Belagavi regional soil and weather conditions, we recommend reviewing your specific soil test report and consulting the nearest Raitha Samparka Kendra or KVK Belagavi for certified local advice.`;
-
-      const botMsg = {
-        id: Date.now() + 1,
-        sender: 'bot',
-        text: replyText,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-
-      setMessages((prev) => [...prev, botMsg]);
-      setIsTyping(false);
-    }, 600);
+  const handleIframeLoad = () => {
+    setIsLoading(false);
+    sendLocationSyncMessage();
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#15803D] bg-[#DCFCE7] px-2.5 py-1 rounded-md mb-2">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-3">
+      {/* Utility Top Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#15803D] bg-[#DCFCE7] px-2.5 py-1 rounded-md">
+            <span className="w-2 h-2 rounded-full bg-[#15803D] animate-pulse" />
             <Bot className="w-3.5 h-3.5" />
-            <span>Farming Decision Assistant</span>
+            <span>AI Assistant Online</span>
           </div>
-          <h1 className="text-2xl font-bold text-[#14532D]">AI Chatbot</h1>
-          <p className="text-sm text-[#64748B] mt-1">
-            Ask questions about crop suitability, pest remedies, weather advisories, fertilizer dosages, or Karnataka government schemes.
-          </p>
+
+          {/* Centralized Location Context Indicator for Chatbot */}
+          <div className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md border border-slate-200 bg-white text-slate-700">
+            {isGps ? (
+              <>
+                <Navigation className="w-3.5 h-3.5 text-[#15803D]" />
+                <span className="font-semibold text-[#14532D]">GPS Context:</span>
+                <span className="truncate max-w-[180px] sm:max-w-none">{formattedName}</span>
+              </>
+            ) : isManual ? (
+              <>
+                <MapPin className="w-3.5 h-3.5 text-[#15803D]" />
+                <span className="font-semibold text-[#14532D]">Location:</span>
+                <span className="truncate max-w-[180px] sm:max-w-none">{formattedName}</span>
+              </>
+            ) : isGlobal ? (
+              <>
+                <Globe className="w-3.5 h-3.5 text-slate-500" />
+                <span className="font-semibold text-slate-700">Global Context (All Regions)</span>
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                <span className="text-amber-800">Location Denied (General Mode)</span>
+              </>
+            )}
+          </div>
         </div>
 
-        <button
-          onClick={() => setMessages(initialMessages)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-600 transition-colors self-start sm:self-auto"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>Clear Chat</span>
-        </button>
-      </div>
-
-      {/* Suggested Prompts */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        {suggestedPrompts.map((prompt, idx) => {
-          const Icon = prompt.icon;
-          return (
-            <button
-              key={idx}
-              onClick={() => handleSend(prompt.text)}
-              className="flex items-center gap-2.5 p-3 rounded-xl bg-white border border-slate-200 hover:border-[#15803D] text-left transition-colors text-xs font-medium text-[#1F2937]"
-            >
-              <div className="w-7 h-7 rounded-lg bg-[#DCFCE7] text-[#15803D] flex items-center justify-center shrink-0">
-                <Icon className="w-3.5 h-3.5" />
-              </div>
-              <span className="line-clamp-1">{prompt.text}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Chat Messages Container */}
-      <div className="bg-white rounded-xl border border-slate-200 flex flex-col h-[480px] overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              {msg.sender === 'bot' && (
-                <div className="w-8 h-8 rounded-full bg-[#15803D] text-white flex items-center justify-center shrink-0 text-xs">
-                  <Bot className="w-4 h-4" />
-                </div>
-              )}
-
-              <div
-                className={`max-w-[82%] rounded-xl p-3.5 text-xs leading-relaxed whitespace-pre-line ${
-                  msg.sender === 'user'
-                    ? 'bg-[#15803D] text-white rounded-tr-none'
-                    : 'bg-[#F8FAF6] border border-slate-200 text-[#1F2937] rounded-tl-none'
-                }`}
-              >
-                <p>{msg.text}</p>
-                <span
-                  className={`block text-[10px] mt-1.5 text-right ${
-                    msg.sender === 'user' ? 'text-emerald-100' : 'text-slate-400'
-                  }`}
-                >
-                  {msg.time}
-                </span>
-              </div>
-
-              {msg.sender === 'user' && (
-                <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center shrink-0 text-xs font-bold">
-                  <User className="w-4 h-4" />
-                </div>
-              )}
-            </div>
-          ))}
-
-          {isTyping && (
-            <div className="flex gap-3 items-center">
-              <div className="w-8 h-8 rounded-full bg-[#15803D] text-white flex items-center justify-center shrink-0 text-xs">
-                <Bot className="w-4 h-4" />
-              </div>
-              <div className="bg-[#F8FAF6] border border-slate-200 rounded-xl rounded-tl-none p-3 text-xs text-[#64748B] flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#15803D] animate-pulse" />
-                <span className="w-2 h-2 rounded-full bg-[#15803D] animate-pulse delay-100" />
-                <span className="w-2 h-2 rounded-full bg-[#15803D] animate-pulse delay-200" />
-                <span className="ml-1 text-[11px]">Assistant is preparing advice...</span>
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Chat Input */}
-        <div className="border-t border-slate-200 p-3 sm:p-4 bg-[#F8FAF6]">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSend();
-            }}
-            className="flex items-center gap-2"
+        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+          <button
+            onClick={handleRefresh}
+            title="Reload Assistant"
+            className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-[#15803D] text-xs font-medium transition-colors cursor-pointer"
           >
-            <input
-              type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Type your question about crops, fertilizers, pests, or subsidies..."
-              className="flex-1 bg-white border border-slate-200 focus:border-[#15803D] rounded-lg px-3.5 py-2 text-xs text-[#1F2937] placeholder-slate-400 focus:outline-none transition-colors"
-            />
-            <button
-              type="submit"
-              disabled={!inputMessage.trim()}
-              className="px-4 py-2 rounded-lg bg-[#15803D] hover:bg-[#14532D] disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>Send</span>
-            </button>
-          </form>
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+          <a
+            href={targetChatbotUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-[#15803D] text-xs font-medium transition-colors cursor-pointer shadow-2xs"
+          >
+            <span>Open in New Tab</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
         </div>
+      </div>
+
+      {/* Embedded ChatBot Frame Container */}
+      <div className="relative w-full h-[720px] sm:h-[760px] lg:h-[800px] xl:h-[840px] bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        {/* Loading Overlay */}
+        {isLoading && !hasError && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#F8FAF6] p-6 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-[#DCFCE7] flex items-center justify-center text-[#15803D] mb-4 shadow-xs">
+              <Bot className="w-6 h-6 animate-bounce" />
+            </div>
+            <h2 className="text-base font-bold text-[#14532D]">Connecting to AgriSphere AI Chatbot</h2>
+            <p className="text-xs text-[#64748B] max-w-sm mt-1">
+              Sharing verified location context ({formattedName}) with your agricultural assistant...
+            </p>
+            <div className="mt-4 flex items-center gap-2 text-xs font-medium text-[#15803D]">
+              <span className="w-2 h-2 rounded-full bg-[#15803D] animate-ping" />
+              <span>Establishing secure connection</span>
+            </div>
+          </div>
+        )}
+
+        {/* Error Fallback */}
+        {hasError ? (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white p-6 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 mb-4">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <h2 className="text-base font-bold text-slate-900">Unable to Display Embedded Chatbot</h2>
+            <p className="text-xs text-slate-500 max-w-md mt-1 mb-5">
+              The external chatbot service could not be loaded inside the iframe. You can open and use the full AgriSphere Chatbot directly in a new tab.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                onClick={handleRefresh}
+                className="px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 transition-colors cursor-pointer"
+              >
+                Try Again
+              </button>
+              <a
+                href={targetChatbotUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#15803D] hover:bg-[#14532D] text-white text-xs font-semibold transition-colors shadow-xs"
+              >
+                <span>Open AgriSphere ChatBot</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+        ) : (
+          <iframe
+            key={iframeKey}
+            ref={iframeRef}
+            src={targetChatbotUrl}
+            title="AgriSphere AI Agriculture Chatbot"
+            onLoad={handleIframeLoad}
+            onError={() => {
+              setIsLoading(false);
+              setHasError(true);
+            }}
+            className="w-full h-full border-0 rounded-2xl"
+            allow="microphone; camera; clipboard-write; clipboard-read"
+          />
+        )}
       </div>
     </div>
   );

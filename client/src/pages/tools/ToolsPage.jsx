@@ -20,11 +20,15 @@ import {
   Tag,
   CheckCircle2,
   X,
+  Navigation,
+  Globe,
 } from 'lucide-react';
 import LeafletMap from '../../components/common/LeafletMap.jsx';
+import { useLocationContext } from '../../context/LocationContext.jsx';
+import { calculateDistanceKm } from '../../services/marketService.js';
 
-// Regional Belagavi Demonstration Equipment & Dealer Locations
-const equipmentDealers = [
+// Regional Agricultural Equipment & Custom Hiring Hubs
+const baseEquipmentDealers = [
   {
     id: 'jd-belagavi',
     title: 'John Deere Tractor & Implement Hub',
@@ -33,7 +37,7 @@ const equipmentDealers = [
     dealership: 'Authorised Dealer & Custom Hire',
     position: [15.8624, 74.5192],
     color: '#15803D',
-    address: 'Plot 42, Mahantesh Nagar, Belagavi',
+    address: 'Plot 42, Mahantesh Nagar, Belagavi 590016',
     contact: '+91 831 247 1820',
     availableEquipment: ['John Deere 5050D (50 HP)', 'Multi-Crop Rotary Tiller', 'Paddy Straw Reaper'],
     pricingType: 'Rental & Purchase',
@@ -155,6 +159,16 @@ const farmingCalculators = [
 ];
 
 const ToolsPage = () => {
+  const {
+    coordinates,
+    city,
+    district,
+    state,
+    formattedName,
+    isGps,
+    isGlobal,
+  } = useLocationContext();
+
   const [activeTab, setActiveTab] = useState('map'); // 'map' or 'calculators'
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -162,9 +176,25 @@ const ToolsPage = () => {
   const [viewMode, setViewMode] = useState('split'); // 'split', 'map', 'list'
   const [activeCalculator, setActiveCalculator] = useState(null);
 
+  // Compute live distance from active user coordinates
+  const equipmentDealersWithDistances = useMemo(() => {
+    return baseEquipmentDealers.map((item) => {
+      const distanceKm = calculateDistanceKm(
+        coordinates.lat,
+        coordinates.lng,
+        item.position[0],
+        item.position[1]
+      );
+      return {
+        ...item,
+        distanceKm,
+      };
+    }).sort((a, b) => a.distanceKm - b.distanceKm);
+  }, [coordinates]);
+
   // Filter Dealers
   const filteredDealers = useMemo(() => {
-    return equipmentDealers.filter((item) => {
+    return equipmentDealersWithDistances.filter((item) => {
       const matchesCategory =
         selectedCategory === 'all' || item.category === selectedCategory;
       const q = searchQuery.trim().toLowerCase();
@@ -176,7 +206,25 @@ const ToolsPage = () => {
         item.availableEquipment.some((eq) => eq.toLowerCase().includes(q));
       return matchesCategory && matchesQuery;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [equipmentDealersWithDistances, selectedCategory, searchQuery]);
+
+  // Leaflet map markers: User active location + equipment hubs
+  const mapMarkers = useMemo(() => {
+    const list = [];
+    list.push({
+      id: 'user-pin',
+      title: `Your Active Location (${formattedName})`,
+      type: isGps ? 'GPS Verified' : 'Location',
+      position: [coordinates.lat, coordinates.lng],
+      color: '#2563EB',
+      description: `Coordinates: ${coordinates.lat.toFixed(4)}, ${coordinates.lng.toFixed(4)}`,
+    });
+    return [...list, ...filteredDealers];
+  }, [coordinates, formattedName, isGps, filteredDealers]);
+
+  const mapCenter = selectedDealer
+    ? selectedDealer.position
+    : [coordinates.lat, coordinates.lng];
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -191,7 +239,8 @@ const ToolsPage = () => {
             Farming Tools & Equipment Maps
           </h1>
           <p className="text-sm text-[#64748B] mt-1">
-            Discover agricultural machinery, custom hiring rental hubs, repair workshops, and field calculators in Belagavi.
+            Discover agricultural machinery, custom hiring rental hubs, repair workshops, and field calculators near{' '}
+            <span className="font-semibold text-slate-800">{formattedName}</span>.
           </p>
         </div>
 
@@ -309,30 +358,34 @@ const ToolsPage = () => {
                 <div className="bg-white rounded-xl border border-slate-200 p-4">
                   <div className="flex items-center justify-between mb-3 text-xs text-[#64748B]">
                     <span className="font-semibold text-[#1F2937]">
-                      Belagavi District Equipment & Service Map
+                      Machinery & Custom Hiring Service Map
                     </span>
                     <span>{filteredDealers.length} Locations Marked</span>
                   </div>
 
                   <LeafletMap
-                    center={selectedDealer ? selectedDealer.position : [15.8497, 74.4977]}
-                    zoom={selectedDealer ? 14 : 12}
-                    markers={filteredDealers}
+                    center={mapCenter}
+                    zoom={selectedDealer ? 14 : 11}
+                    markers={mapMarkers}
                     selectedId={selectedDealer?.id}
-                    onSelectMarker={(dealer) => setSelectedDealer(dealer)}
+                    onSelectMarker={(dealer) => {
+                      if (dealer.id !== 'user-pin') {
+                        setSelectedDealer(dealer);
+                      }
+                    }}
                     height={viewMode === 'map' ? '540px' : '480px'}
                   />
 
                   <div className="mt-3 flex flex-wrap items-center justify-between text-xs text-[#64748B] gap-2 pt-2 border-t border-slate-100">
                     <div className="flex items-center gap-3">
                       <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#2563EB]" /> You
+                      </span>
+                      <span className="flex items-center gap-1">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#15803D]" /> Tractors
                       </span>
                       <span className="flex items-center gap-1">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#DC2626]" /> Dealers
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#2563EB]" /> Sprayers
                       </span>
                       <span className="flex items-center gap-1">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#7C3AED]" /> Rentals
@@ -358,7 +411,7 @@ const ToolsPage = () => {
                   <span className="font-semibold text-[#1F2937]">
                     Nearby Equipment Providers ({filteredDealers.length})
                   </span>
-                  <span>Belagavi Taluks</span>
+                  <span>Sorted by Distance</span>
                 </div>
 
                 {filteredDealers.map((item) => {
@@ -375,15 +428,20 @@ const ToolsPage = () => {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <span
-                            className="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
-                            style={{
-                              backgroundColor: '#F1F5F9',
-                              color: item.color,
-                            }}
-                          >
-                            {item.type}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
+                              style={{
+                                backgroundColor: '#F1F5F9',
+                                color: item.color,
+                              }}
+                            >
+                              {item.type}
+                            </span>
+                            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                              {item.distanceKm} km away
+                            </span>
+                          </div>
                           <h3 className="text-sm font-bold text-[#1F2937] group-hover:text-[#15803D] transition-colors mt-1">
                             {item.title}
                           </h3>
@@ -487,8 +545,8 @@ const ToolsPage = () => {
           <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-start gap-3">
             <CheckCircle2 className="w-5 h-5 text-[#15803D] shrink-0 mt-0.5" />
             <div className="text-xs text-[#64748B] leading-relaxed">
-              <span className="font-bold text-[#1F2937]">Note for farmers: </span>
-              Calculations are agronomic planning estimates for standard Karnataka crop conditions. Actual seed rates and fertilizer dosages may vary based on soil test reports and specific seed variety recommendations.
+              <span className="font-bold text-[#1F2937]">Agronomic planning reference: </span>
+              Calculations provide baseline estimates according to standard agricultural extension guidelines. For precise site-specific dosages, integrate with the AgriSphere Soil Health STCR calculator.
             </div>
           </div>
         </div>
