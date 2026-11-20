@@ -39,14 +39,18 @@ const NotificationsPage = () => {
 
     // 1. Live Weather Alert from Open-Meteo
     if (weather) {
-      const hasRain = weather.precipitationSum > 0 || weather.weatherCode >= 51;
-      const highWind = weather.windSpeed > 18;
+      const hasRain = (parseFloat(weather.precipitationSum || weather.rain || 0) > 0) || (weather.weatherCode >= 51);
+      const windVal = typeof weather.windSpeed === 'number' ? weather.windSpeed : parseInt(weather.wind || '12', 10);
+      const highWind = windVal > 18;
+      const tempText = weather.temp || `${weather.temperature ?? 26}°C`;
+      const condText = weather.condition || weather.conditionText || 'Partly Cloudy';
+      const windText = weather.wind || `${windVal} km/h`;
 
       if (hasRain) {
         list.push({
           id: 1,
           title: `Precipitation Advisory for ${locName}`,
-          description: `Live weather reports ${weather.conditionText} (${weather.precipitationSum || '0.5'} mm rainfall). Postpone open field fertilizer broadcasts and ensure proper drainage channels in low-lying plots.`,
+          description: `Live weather reports ${condText} (${weather.rain || weather.precipitationSum || '0.5 mm'} rainfall). Postpone open field fertilizer broadcasts and ensure proper drainage channels in low-lying plots.`,
           time: 'Live Weather Update',
           category: 'Weather',
           icon: CloudRain,
@@ -57,7 +61,7 @@ const NotificationsPage = () => {
         list.push({
           id: 1,
           title: `High Wind Spray Warning for ${locName}`,
-          description: `Current wind velocity is ${weather.windSpeed} km/h at ${weather.temperature}°C. Spray drift risk is high. Delay pesticide/foliar applications until wind drops below 15 km/h.`,
+          description: `Current wind velocity is ${windText} at ${tempText}. Spray drift risk is high. Delay pesticide/foliar applications until wind drops below 15 km/h.`,
           time: 'Live Weather Update',
           category: 'Weather',
           icon: Wind,
@@ -68,7 +72,7 @@ const NotificationsPage = () => {
         list.push({
           id: 1,
           title: `Favorable Weather Window in ${locName}`,
-          description: `Current conditions: ${weather.temperature}°C, ${weather.conditionText}, Wind ${weather.windSpeed} km/h. Optimum conditions for farm operations, intercultural weeding, and drip fertigation.`,
+          description: `Current conditions: ${tempText}, ${condText}, Wind ${windText}. Optimum conditions for farm operations, intercultural weeding, and drip fertigation.`,
           time: 'Live Weather Update',
           category: 'Weather',
           icon: CloudRain,

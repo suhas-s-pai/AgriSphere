@@ -160,7 +160,8 @@ const farmingCalculators = [
 
 const ToolsPage = () => {
   const {
-    coordinates,
+    latitude,
+    longitude,
     city,
     district,
     state,
@@ -176,21 +177,30 @@ const ToolsPage = () => {
   const [viewMode, setViewMode] = useState('split'); // 'split', 'map', 'list'
   const [activeCalculator, setActiveCalculator] = useState(null);
 
+  const userLat = latitude ?? 15.8497;
+  const userLng = longitude ?? 74.4977;
+  const hasUserCoords = latitude != null && longitude != null;
+
   // Compute live distance from active user coordinates
   const equipmentDealersWithDistances = useMemo(() => {
     return baseEquipmentDealers.map((item) => {
-      const distanceKm = calculateDistanceKm(
-        coordinates.lat,
-        coordinates.lng,
-        item.position[0],
-        item.position[1]
-      );
+      const distanceKm = hasUserCoords
+        ? calculateDistanceKm(
+            userLat,
+            userLng,
+            item.position[0],
+            item.position[1]
+          )
+        : null;
       return {
         ...item,
         distanceKm,
       };
-    }).sort((a, b) => a.distanceKm - b.distanceKm);
-  }, [coordinates]);
+    }).sort((a, b) => {
+      if (a.distanceKm != null && b.distanceKm != null) return a.distanceKm - b.distanceKm;
+      return 0;
+    });
+  }, [hasUserCoords, userLat, userLng]);
 
   // Filter Dealers
   const filteredDealers = useMemo(() => {
@@ -211,20 +221,22 @@ const ToolsPage = () => {
   // Leaflet map markers: User active location + equipment hubs
   const mapMarkers = useMemo(() => {
     const list = [];
-    list.push({
-      id: 'user-pin',
-      title: `Your Active Location (${formattedName})`,
-      type: isGps ? 'GPS Verified' : 'Location',
-      position: [coordinates.lat, coordinates.lng],
-      color: '#2563EB',
-      description: `Coordinates: ${coordinates.lat.toFixed(4)}, ${coordinates.lng.toFixed(4)}`,
-    });
+    if (hasUserCoords) {
+      list.push({
+        id: 'user-pin',
+        title: `Your Active Location (${formattedName})`,
+        type: isGps ? 'GPS Verified' : 'Location',
+        position: [userLat, userLng],
+        color: '#2563EB',
+        description: `Coordinates: ${userLat.toFixed(4)}°N, ${userLng.toFixed(4)}°E`,
+      });
+    }
     return [...list, ...filteredDealers];
-  }, [coordinates, formattedName, isGps, filteredDealers]);
+  }, [hasUserCoords, userLat, userLng, formattedName, isGps, filteredDealers]);
 
   const mapCenter = selectedDealer
     ? selectedDealer.position
-    : [coordinates.lat, coordinates.lng];
+    : [userLat, userLng];
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -439,7 +451,7 @@ const ToolsPage = () => {
                               {item.type}
                             </span>
                             <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
-                              {item.distanceKm} km away
+                              {item.distanceKm != null ? `${item.distanceKm} km away` : 'Regional Service'}
                             </span>
                           </div>
                           <h3 className="text-sm font-bold text-[#1F2937] group-hover:text-[#15803D] transition-colors mt-1">

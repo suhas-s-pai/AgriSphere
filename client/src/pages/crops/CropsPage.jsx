@@ -174,7 +174,8 @@ const regionalAgroZones = [
 
 const CropsPage = () => {
   const {
-    coordinates,
+    latitude,
+    longitude,
     city,
     district,
     state,
@@ -193,6 +194,10 @@ const CropsPage = () => {
     ? 'All India / Regional Overview'
     : district || city || state || formattedName;
 
+  const userLat = latitude ?? 15.8497;
+  const userLng = longitude ?? 74.4977;
+  const hasUserCoords = latitude != null && longitude != null;
+
   const filteredCrops = useMemo(() => {
     return baseCropsData.filter((crop) => {
       const matchesSeason =
@@ -208,20 +213,22 @@ const CropsPage = () => {
   }, [selectedSeason, searchQuery]);
 
   // Leaflet Map Markers: Include user active location pin + regional agro-climatic zones
-  const mapCenter = [coordinates.lat, coordinates.lng];
+  const mapCenter = [userLat, userLng];
 
   const mapMarkers = useMemo(() => {
     const list = [];
 
-    // Current user live location pin
-    list.push({
-      id: 'current-user-pos',
-      title: `Your Active Location (${formattedName})`,
-      type: isGps ? 'GPS Verified' : 'Selected Location',
-      position: [coordinates.lat, coordinates.lng],
-      color: '#2563EB',
-      description: `GPS Lat: ${coordinates.lat.toFixed(4)}, Lng: ${coordinates.lng.toFixed(4)}`,
-    });
+    // Current user live location pin if available
+    if (hasUserCoords) {
+      list.push({
+        id: 'current-user-pos',
+        title: `Your Active Location (${formattedName})`,
+        type: isGps ? 'GPS Verified' : 'Selected Location',
+        position: [userLat, userLng],
+        color: '#2563EB',
+        description: `Coordinates: ${userLat.toFixed(4)}°N, ${userLng.toFixed(4)}°E`,
+      });
+    }
 
     // Regional Agro-zones
     regionalAgroZones.forEach((zone) => {
@@ -236,7 +243,7 @@ const CropsPage = () => {
     });
 
     return list;
-  }, [coordinates, formattedName, isGps]);
+  }, [hasUserCoords, userLat, userLng, formattedName, isGps]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-6">

@@ -316,12 +316,18 @@ export const LocationProvider = ({ children }) => {
       setWeatherData({
         isGlobal: false,
         temp: `${temp}°C`,
+        temperature: temp,
         condition: currentWmo.condition,
+        conditionText: currentWmo.condition,
         iconType: currentWmo.iconType,
+        weatherCode: data.current?.weather_code,
         humidity: `${humidity}%`,
         wind: `${wind} km/h`,
+        windSpeed: wind,
         rain: `${rain} mm`,
+        precipitation: rain,
         rainSum: `${rainSum} mm`,
+        precipitationSum: rainSum,
         sunrise,
         sunset,
         uvIndex,
@@ -562,6 +568,11 @@ export const LocationProvider = ({ children }) => {
     latitude: locationState.latitude,
     longitude: locationState.longitude,
     coords: locationState.latitude && locationState.longitude ? { lat: locationState.latitude, lng: locationState.longitude } : null,
+    coordinates: {
+      lat: locationState.latitude ?? 15.8497,
+      lng: locationState.longitude ?? 74.4977,
+      hasRealCoords: locationState.latitude != null && locationState.longitude != null,
+    },
     city: locationState.city,
     district: locationState.district,
     state: locationState.state,
@@ -582,6 +593,7 @@ export const LocationProvider = ({ children }) => {
 
     // Weather Data
     weatherData,
+    weather: weatherData, // Backwards compatibility
     isWeatherLoading,
     weatherError,
 

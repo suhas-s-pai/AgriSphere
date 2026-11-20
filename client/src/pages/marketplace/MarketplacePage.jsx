@@ -193,7 +193,8 @@ const categories = ['All', 'Seeds', 'Fertilizers', 'Bio-Fertilizers', 'Crop Prot
 
 const MarketplacePage = () => {
   const {
-    coordinates,
+    latitude,
+    longitude,
     city,
     district,
     state,
@@ -201,6 +202,10 @@ const MarketplacePage = () => {
     isGps,
     isGlobal,
   } = useLocationContext();
+
+  const userLat = latitude ?? 15.8497;
+  const userLng = longitude ?? 74.4977;
+  const hasUserCoords = latitude != null && longitude != null;
 
   // Load persisted products from localStorage or use defaults
   const [products, setProducts] = useState(() => {
@@ -258,18 +263,23 @@ const MarketplacePage = () => {
   // Compute live distances for shops
   const agriShopsWithDistances = useMemo(() => {
     return baseAgriShops.map((shop) => {
-      const distanceKm = calculateDistanceKm(
-        coordinates.lat,
-        coordinates.lng,
-        shop.position[0],
-        shop.position[1]
-      );
+      const distanceKm = hasUserCoords
+        ? calculateDistanceKm(
+            userLat,
+            userLng,
+            shop.position[0],
+            shop.position[1]
+          )
+        : null;
       return {
         ...shop,
         distanceKm,
       };
-    }).sort((a, b) => a.distanceKm - b.distanceKm);
-  }, [coordinates]);
+    }).sort((a, b) => {
+      if (a.distanceKm != null && b.distanceKm != null) return a.distanceKm - b.distanceKm;
+      return 0;
+    });
+  }, [hasUserCoords, userLat, userLng]);
 
   // Filtered Products
   const filteredProducts = useMemo(() => {
@@ -306,30 +316,32 @@ const MarketplacePage = () => {
   // Map markers: User location + shops
   const mapMarkers = useMemo(() => {
     const list = [];
-    list.push({
-      id: 'user-pin',
-      title: `Your Active Location (${formattedName})`,
-      type: isGps ? 'GPS Verified' : 'Location',
-      position: [coordinates.lat, coordinates.lng],
-      color: '#2563EB',
-      description: `Coordinates: ${coordinates.lat.toFixed(4)}, ${coordinates.lng.toFixed(4)}`,
-    });
+    if (hasUserCoords) {
+      list.push({
+        id: 'user-pin',
+        title: `Your Active Location (${formattedName})`,
+        type: isGps ? 'GPS Verified' : 'Location',
+        position: [userLat, userLng],
+        color: '#2563EB',
+        description: `Coordinates: ${userLat.toFixed(4)}°N, ${userLng.toFixed(4)}°E`,
+      });
+    }
 
     filteredShops.forEach((shop) => {
       list.push({
         id: shop.id,
         title: shop.name,
-        type: `${shop.type} • ${shop.distanceKm} km away`,
+        type: `${shop.type} • ${shop.distanceKm != null ? `${shop.distanceKm} km away` : 'Regional Depot'}`,
         position: shop.position,
         color: shop.color,
         address: shop.address,
         contact: shop.contact,
-        description: `Distance: ${shop.distanceKm} km. Available: ${shop.inventory.join(', ')}. Hours: ${shop.hours}`,
+        description: `${shop.distanceKm != null ? `Distance: ${shop.distanceKm} km. ` : ''}Available: ${shop.inventory.join(', ')}. Hours: ${shop.hours}`,
       });
     });
 
     return list;
-  }, [coordinates, formattedName, isGps, filteredShops]);
+  }, [hasUserCoords, userLat, userLng, formattedName, isGps, filteredShops]);
 
   const handleLocateSellerOnMap = (shopId) => {
     setSelectedShopId(shopId);
@@ -368,7 +380,7 @@ const MarketplacePage = () => {
   };
 
   const activeShop = agriShopsWithDistances.find((s) => s.id === selectedShopId);
-  const mapCenter = activeShop ? activeShop.position : [coordinates.lat, coordinates.lng];
+  const mapCenter = activeShop ? activeShop.position : [userLat, userLng];
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-6">

@@ -198,7 +198,8 @@ const categories = [
 
 const SchemesPage = () => {
   const {
-    coordinates,
+    latitude,
+    longitude,
     city,
     district,
     state,
@@ -212,21 +213,30 @@ const SchemesPage = () => {
   const [selectedScheme, setSelectedScheme] = useState(null);
   const [showOfficesMap, setShowOfficesMap] = useState(false);
 
+  const userLat = latitude ?? 15.8497;
+  const userLng = longitude ?? 74.4977;
+  const hasUserCoords = latitude != null && longitude != null;
+
   // Compute live distances for extension offices
   const officesWithDistances = useMemo(() => {
     return baseAgricultureOffices.map((office) => {
-      const distanceKm = calculateDistanceKm(
-        coordinates.lat,
-        coordinates.lng,
-        office.position[0],
-        office.position[1]
-      );
+      const distanceKm = hasUserCoords
+        ? calculateDistanceKm(
+            userLat,
+            userLng,
+            office.position[0],
+            office.position[1]
+          )
+        : null;
       return {
         ...office,
         distanceKm,
       };
-    }).sort((a, b) => a.distanceKm - b.distanceKm);
-  }, [coordinates]);
+    }).sort((a, b) => {
+      if (a.distanceKm != null && b.distanceKm != null) return a.distanceKm - b.distanceKm;
+      return 0;
+    });
+  }, [hasUserCoords, userLat, userLng]);
 
   // Prioritize schemes matching user's active state
   const prioritizedSchemes = useMemo(() => {
@@ -258,16 +268,18 @@ const SchemesPage = () => {
   // Map markers: User location + extension offices
   const mapMarkers = useMemo(() => {
     const list = [];
-    list.push({
-      id: 'user-pin',
-      title: `Your Active Location (${formattedName})`,
-      type: isGps ? 'GPS Verified' : 'Location',
-      position: [coordinates.lat, coordinates.lng],
-      color: '#2563EB',
-      description: `Coordinates: ${coordinates.lat.toFixed(4)}, ${coordinates.lng.toFixed(4)}`,
-    });
+    if (hasUserCoords) {
+      list.push({
+        id: 'user-pin',
+        title: `Your Active Location (${formattedName})`,
+        type: isGps ? 'GPS Verified' : 'Location',
+        position: [userLat, userLng],
+        color: '#2563EB',
+        description: `Coordinates: ${userLat.toFixed(4)}°N, ${userLng.toFixed(4)}°E`,
+      });
+    }
     return [...list, ...officesWithDistances];
-  }, [coordinates, formattedName, isGps, officesWithDistances]);
+  }, [hasUserCoords, userLat, userLng, formattedName, isGps, officesWithDistances]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -342,7 +354,7 @@ const SchemesPage = () => {
           </div>
 
           <LeafletMap
-            center={[coordinates.lat, coordinates.lng]}
+            center={[userLat, userLng]}
             zoom={11}
             markers={mapMarkers}
             selectedId="user-pin"
@@ -359,7 +371,7 @@ const SchemesPage = () => {
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-bold text-[#14532D]">{office.name}</span>
                     <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded shrink-0">
-                      {office.distanceKm} km
+                      {office.distanceKm != null ? `${office.distanceKm} km` : 'Regional Office'}
                     </span>
                   </div>
                   <p className="text-slate-500 mt-1">{office.address}</p>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LocationProvider } from './context/LocationContext.jsx';
+import ErrorBoundary from './components/common/ErrorBoundary.jsx';
 import MainLayout from './components/layout/MainLayout.jsx';
 import DashboardPage from './pages/dashboard/DashboardPage.jsx';
 import CropsPage from './pages/crops/CropsPage.jsx';
@@ -20,34 +21,43 @@ import ChatbotPage from './pages/chatbot/ChatbotPage.jsx';
 
 function App() {
   return (
-    <LocationProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<MainLayout />}>
-            <Route index element={<DashboardPage />} />
-            <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="crops" element={<CropsPage />} />
-            <Route path="weather" element={<WeatherPage />} />
-            <Route path="market-prices" element={<MarketPage />} />
-            <Route path="farming-tools" element={<ToolsPage />} />
-            <Route path="tools-maps" element={<ToolsPage />} />
-            <Route path="diseases-pests" element={<DiseasesPage />} />
-            <Route path="soil-fertilizers" element={<SoilPage />} />
-            <Route path="government-schemes" element={<SchemesPage />} />
-            <Route path="marketplace" element={<MarketplacePage />} />
-            <Route path="maps-nearby" element={<MapsPage />} />
-            <Route path="maps" element={<MapsPage />} />
-            <Route path="knowledge-hub" element={<KnowledgePage />} />
-            <Route path="my-farm" element={<FarmPage />} />
-            <Route path="farm" element={<FarmPage />} />
-            <Route path="ai-chatbot" element={<ChatbotPage />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-            <Route path="help-support" element={<HelpPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </Router>
-    </LocationProvider>
+    <ErrorBoundary title="AgriSphere System Error">
+      <LocationProvider>
+        <Router>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <ErrorBoundary title="AgriSphere Layout Error">
+                  <MainLayout />
+                </ErrorBoundary>
+              }
+            >
+              <Route index element={<ErrorBoundary title="Dashboard Error"><DashboardPage /></ErrorBoundary>} />
+              <Route path="dashboard" element={<ErrorBoundary title="Dashboard Error"><DashboardPage /></ErrorBoundary>} />
+              <Route path="crops" element={<ErrorBoundary title="Crop Guide Error"><CropsPage /></ErrorBoundary>} />
+              <Route path="weather" element={<ErrorBoundary title="Weather Forecast Error"><WeatherPage /></ErrorBoundary>} />
+              <Route path="market-prices" element={<ErrorBoundary title="Market Prices Error"><MarketPage /></ErrorBoundary>} />
+              <Route path="farming-tools" element={<ErrorBoundary title="Farming Tools Error"><ToolsPage /></ErrorBoundary>} />
+              <Route path="tools-maps" element={<ErrorBoundary title="Farming Tools Error"><ToolsPage /></ErrorBoundary>} />
+              <Route path="diseases-pests" element={<ErrorBoundary title="Diseases & Pests Error"><DiseasesPage /></ErrorBoundary>} />
+              <Route path="soil-fertilizers" element={<ErrorBoundary title="Soil Health Error"><SoilPage /></ErrorBoundary>} />
+              <Route path="government-schemes" element={<ErrorBoundary title="Schemes Error"><SchemesPage /></ErrorBoundary>} />
+              <Route path="marketplace" element={<ErrorBoundary title="Marketplace Error"><MarketplacePage /></ErrorBoundary>} />
+              <Route path="maps-nearby" element={<ErrorBoundary title="Maps & Services Error"><MapsPage /></ErrorBoundary>} />
+              <Route path="maps" element={<ErrorBoundary title="Maps & Services Error"><MapsPage /></ErrorBoundary>} />
+              <Route path="knowledge-hub" element={<ErrorBoundary title="Knowledge Hub Error"><KnowledgePage /></ErrorBoundary>} />
+              <Route path="my-farm" element={<ErrorBoundary title="Farm Records Error"><FarmPage /></ErrorBoundary>} />
+              <Route path="farm" element={<ErrorBoundary title="Farm Records Error"><FarmPage /></ErrorBoundary>} />
+              <Route path="ai-chatbot" element={<ErrorBoundary title="AI Assistant Error"><ChatbotPage /></ErrorBoundary>} />
+              <Route path="notifications" element={<ErrorBoundary title="Notifications Error"><NotificationsPage /></ErrorBoundary>} />
+              <Route path="help-support" element={<ErrorBoundary title="Helpdesk Error"><HelpPage /></ErrorBoundary>} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          </Routes>
+        </Router>
+      </LocationProvider>
+    </ErrorBoundary>
   );
 }
 
