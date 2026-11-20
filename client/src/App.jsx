@@ -1,6 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LocationProvider } from './context/LocationContext.jsx';
+import { AuthProvider } from './context/AuthContext.jsx';
+import { CartProvider } from './context/CartContext.jsx';
+import AuthModal from './components/marketplace/AuthModal.jsx';
 import ErrorBoundary from './components/common/ErrorBoundary.jsx';
 import MainLayout from './components/layout/MainLayout.jsx';
 import DashboardPage from './pages/dashboard/DashboardPage.jsx';
@@ -23,7 +26,10 @@ function App() {
   return (
     <ErrorBoundary title="AgriSphere System Error">
       <LocationProvider>
-        <Router>
+        <AuthProvider>
+          <CartProvider>
+            <AuthModal />
+            <Router>
           <Routes>
             <Route
               path="/"
@@ -56,8 +62,10 @@ function App() {
             </Route>
           </Routes>
         </Router>
-      </LocationProvider>
-    </ErrorBoundary>
+          </CartProvider>
+      </AuthProvider>
+    </LocationProvider>
+  </ErrorBoundary>
   );
 }
 
