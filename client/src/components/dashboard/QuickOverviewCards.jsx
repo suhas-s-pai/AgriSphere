@@ -4,13 +4,13 @@ import {
   CloudSun,
   TrendingUp,
   Sprout,
-  Bell,
   ChevronRight,
   Sun,
   CloudRain,
   Cloud,
 } from 'lucide-react';
 import { useLocationContext } from '../../context/LocationContext.jsx';
+import { getCommodityPrices } from '../../services/marketService.js';
 
 const getWeatherIcon = (type) => {
   switch (type) {
@@ -27,7 +27,7 @@ const getWeatherIcon = (type) => {
 };
 
 const QuickOverviewCards = () => {
-  const { weatherData, status, displayName, city, district, isGlobal } = useLocationContext();
+  const { weatherData, status, displayName, city, district, state, isGlobal } = useLocationContext();
 
   // Load user's registered farm crops from localStorage
   const registeredCropsCount = React.useMemo(() => {
@@ -44,6 +44,7 @@ const QuickOverviewCards = () => {
   }, []);
 
   const marketLoc = isGlobal ? 'Regional' : (city || district || 'Local');
+  const localMarketPrice = getCommodityPrices({ state, district })[0] || null;
 
   const weatherCard = {
     title: 'Weather',
@@ -62,8 +63,8 @@ const QuickOverviewCards = () => {
     weatherCard,
     {
       title: 'Market Prices',
-      value: '₹25 / kg',
-      detail: `Tomato (${marketLoc} APMC)`,
+      value: localMarketPrice?.perKg || 'No recent rate',
+      detail: localMarketPrice ? `${localMarketPrice.crop} · ${localMarketPrice.date}` : `No reported rate for ${marketLoc}`,
       icon: TrendingUp,
       link: '/market-prices',
     },
@@ -74,17 +75,10 @@ const QuickOverviewCards = () => {
       icon: Sprout,
       link: '/my-farm',
     },
-    {
-      title: 'Farming Alerts',
-      value: '2 Alerts',
-      detail: 'Require your attention',
-      icon: Bell,
-      link: '/notifications',
-    },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {cards.map((card) => {
         const Icon = card.icon;
         return (

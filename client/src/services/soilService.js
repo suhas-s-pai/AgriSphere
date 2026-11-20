@@ -121,40 +121,34 @@ export function classifyOrganicCarbon(ocPercent) {
 /**
  * Evaluate Soil pH
  */
-export function evaluatePh(ph) {
+export function evaluatePh(ph, cropKey = 'maize') {
+  const crop = CROP_NPK_REQUIREMENTS[cropKey] || CROP_NPK_REQUIREMENTS.maize;
+  const [idealMin, idealMax] = crop.optimalPh;
+  let status, color, action;
+
   if (ph < 5.5) {
-    return {
-      status: 'Strongly Acidic',
-      color: 'text-rose-700 bg-rose-50 border-rose-200',
-      action: 'Apply Agricultural Lime (Calcium Carbonate @ 250–350 kg/acre) to correct acidity and free up phosphorus.',
-    };
+    status = 'Strongly acidic';
+    color = 'text-rose-700 bg-rose-50 border-rose-200';
+    action = 'Acidic soil can reduce phosphorus and some micronutrient availability. Ask a soil-testing laboratory or Raitha Samparka Kendra for a lime requirement based on buffer pH; do not apply a guessed lime dose.';
+  } else if (ph < idealMin) {
+    status = 'Below this crop’s preferred pH';
+    color = 'text-amber-700 bg-amber-50 border-amber-200';
+    action = `The entered pH is below the preferred range (${idealMin.toFixed(1)}–${idealMax.toFixed(1)}) for ${crop.name}. Check acidity and micronutrient availability; obtain a lime requirement from a soil test before applying lime.`;
+  } else if (ph <= idealMax) {
+    status = 'Within this crop’s preferred range';
+    color = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+    action = `The entered pH is within the preferred range (${idealMin.toFixed(1)}–${idealMax.toFixed(1)}) for ${crop.name}. Maintain organic matter and follow the soil-test N-P-K recommendation.`;
+  } else if (ph <= 8.5) {
+    status = 'Alkaline for this crop';
+    color = 'text-amber-700 bg-amber-50 border-amber-200';
+    action = `The entered pH is above the preferred range (${idealMin.toFixed(1)}–${idealMax.toFixed(1)}) for ${crop.name}. High pH may reduce availability of iron, zinc and phosphorus. Test soil and irrigation-water quality before selecting an amendment.`;
+  } else {
+    status = 'Strongly alkaline';
+    color = 'text-rose-700 bg-rose-50 border-rose-200';
+    action = 'Strong alkalinity may indicate sodicity or salinity. Request soil EC, exchangeable sodium / ESP and gypsum-requirement testing before treatment. Do not apply gypsum solely from pH.';
   }
-  if (ph < 6.5) {
-    return {
-      status: 'Slightly Acidic',
-      color: 'text-amber-700 bg-amber-50 border-amber-200',
-      action: 'Suitable for most millets and tea/coffee. Incorporate organic manure; monitor P fixation.',
-    };
-  }
-  if (ph <= 7.5) {
-    return {
-      status: 'Optimal Neutral',
-      color: 'text-emerald-700 bg-emerald-50 border-emerald-200',
-      action: 'Ideal agronomic range. Maximum microbial activity and optimum availability of all primary nutrients.',
-    };
-  }
-  if (ph <= 8.5) {
-    return {
-      status: 'Slightly Alkaline (Calcareous)',
-      color: 'text-amber-700 bg-amber-50 border-amber-200',
-      action: 'Common in black cotton soils. Apply Gypsum if sodic. Use Zinc Sulphate (10 kg/acre) to avert micro-nutrient deficiency.',
-    };
-  }
-  return {
-    status: 'Strongly Alkaline (Sodic)',
-    color: 'text-rose-700 bg-rose-50 border-rose-200',
-    action: 'High exchangeable sodium. Treat with Gypsum (500 kg/acre) followed by drainage leaching. Avoid alkaline irrigation water.',
-  };
+
+  return { status, color, action, idealRange: `${idealMin.toFixed(1)}–${idealMax.toFixed(1)}`, cropSuitable: ph >= idealMin && ph <= idealMax };
 }
 
 /**
@@ -185,7 +179,8 @@ export function calculateFertilizerDose({ cropKey, nVal, pVal, kVal, phVal, area
   return {
     cropName: crop.name,
     areaAcres,
-    phStatus: evaluatePh(phVal),
+    phStatus: evaluatePh(phVal, cropKey),
+    methodNote: 'Indicative crop nutrient schedule adjusted by the entered soil-test N, P and K classes. This is not a laboratory-specific ICAR STCR equation. Soil pH changes crop-suitability and amendment advice; it does not independently determine urea or DAP quantity.',
     ratings: {
       nitrogen: nClass,
       phosphorus: pClass,

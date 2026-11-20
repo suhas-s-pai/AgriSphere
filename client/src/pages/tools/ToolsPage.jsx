@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Wrench,
   Search,
@@ -26,6 +26,7 @@ import {
 import LeafletMap from '../../components/common/LeafletMap.jsx';
 import { useLocationContext } from '../../context/LocationContext.jsx';
 import { calculateDistanceKm } from '../../services/marketService.js';
+import { findNearbyAgriculturalPlaces } from '../../services/nearbyPlacesService.js';
 
 // Regional Agricultural Equipment & Custom Hiring Hubs
 const baseEquipmentDealers = [
@@ -176,6 +177,23 @@ const ToolsPage = () => {
   const [selectedDealer, setSelectedDealer] = useState(null);
   const [viewMode, setViewMode] = useState('split'); // 'split', 'map', 'list'
   const [activeCalculator, setActiveCalculator] = useState(null);
+  const [discoveredDealers, setDiscoveredDealers] = useState([]);
+  const [discoveryStatus, setDiscoveryStatus] = useState('');
+
+  // Discover mapped agricultural suppliers around the farmer's selected/GPS location.
+  useEffect(() => {
+    if (latitude == null || longitude == null) {
+      setDiscoveredDealers([]);
+      setDiscoveryStatus('Enable GPS or choose a location to find nearby providers.');
+      return;
+    }
+    let active = true;
+    setDiscoveryStatus('Searching OpenStreetMap for nearby farm equipment providers…');
+    findNearbyAgriculturalPlaces(latitude, longitude, 30, 'equipment')
+      .then((items) => { if (active) { setDiscoveredDealers(items); setDiscoveryStatus(items.length ? `Found ${items.length} mapped providers within 30 km. Listings depend on OpenStreetMap coverage.` : 'No mapped providers found within 30 km. Try a larger radius or check the map.'); } })
+      .catch(() => { if (active) setDiscoveryStatus('Nearby directory is temporarily unavailable. Existing directory entries are still shown.'); });
+    return () => { active = false; };
+  }, [latitude, longitude]);
 
   const userLat = latitude ?? 15.8497;
   const userLng = longitude ?? 74.4977;
@@ -183,24 +201,19 @@ const ToolsPage = () => {
 
   // Compute live distance from active user coordinates
   const equipmentDealersWithDistances = useMemo(() => {
-    return baseEquipmentDealers.map((item) => {
-      const distanceKm = hasUserCoords
-        ? calculateDistanceKm(
-            userLat,
-            userLng,
-            item.position[0],
-            item.position[1]
-          )
-        : null;
-      return {
-        ...item,
-        distanceKm,
-      };
-    }).sort((a, b) => {
-      if (a.distanceKm != null && b.distanceKm != null) return a.distanceKm - b.distanceKm;
-      return 0;
-    });
-  }, [hasUserCoords, userLat, userLng]);
+    // Keep the original curated directory, but do not show distant Belagavi sample entries
+    // as if they were local to a farmer in another district.
+    const curated = baseEquipmentDealers.map((item) => ({
+      ...item,
+      distanceKm: hasUserCoords ? calculateDistanceKm(userLat, userLng, item.position[0], item.position[1]) : null,
+      source: 'AgriSphere directory',
+    })).filter((item) => !hasUserCoords || item.distanceKm <= 50);
+    const combined = [...curated, ...discoveredDealers];
+    const unique = combined.filter((item, index, all) => all.findIndex((x) =>
+      (x.id && x.id === item.id) || (x.title || x.name || '').toLowerCase() === (item.title || item.name || '').toLowerCase()
+    ) === index);
+    return unique.sort((a, b) => (a.distanceKm ?? 99999) - (b.distanceKm ?? 99999));
+  }, [hasUserCoords, userLat, userLng, discoveredDealers]);
 
   // Filter Dealers
   const filteredDealers = useMemo(() => {
@@ -231,10 +244,10 @@ const ToolsPage = () => {
         description: `Coordinates: ${userLat.toFixed(4)}°N, ${userLng.toFixed(4)}°E`,
       });
     }
-    return [...list, ...filteredDealers];
+    return [...list, ...filteredDealers.filter((dealer) => Array.isArray(dealer.position) && dealer.position.length === 2)];
   }, [hasUserCoords, userLat, userLng, formattedName, isGps, filteredDealers]);
 
-  const mapCenter = selectedDealer
+  const mapCenter = selectedDealer?.position
     ? selectedDealer.position
     : [userLat, userLng];
 
@@ -254,6 +267,8 @@ const ToolsPage = () => {
             Discover agricultural machinery, custom hiring rental hubs, repair workshops, and field calculators near{' '}
             <span className="font-semibold text-slate-800">{formattedName}</span>.
           </p>
+          {discoveryStatus && <p className="text-xs text-slate-500 mt-2">{discoveryStatus}</p>}
+          <p className="text-[10px] text-slate-400 mt-1">Live nearby directory: OpenStreetMap. Listings are limited to mapped places and may not include every local shop.</p>
         </div>
 
         {/* Tab Switcher */}
@@ -451,7 +466,7 @@ const ToolsPage = () => {
                               {item.type}
                             </span>
                             <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
-                              {item.distanceKm != null ? `${item.distanceKm} km away` : 'Regional Service'}
+                              {item.distanceKm != null ? `${item.distanceKm} km away` : 'Bantwal-area listing'}
                             </span>
                           </div>
                           <h3 className="text-sm font-bold text-[#1F2937] group-hover:text-[#15803D] transition-colors mt-1">
@@ -494,7 +509,9 @@ const ToolsPage = () => {
                           </span>
 
                           <a
-                            href={`https://www.google.com/maps/dir/?api=1&destination=${item.position[0]},${item.position[1]}`}
+                            href={Array.isArray(item.position)
+                              ? `https://www.google.com/maps/dir/?api=1&destination=${item.position[0]},${item.position[1]}`
+                              : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${item.title}, ${item.address}`)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
@@ -529,7 +546,17 @@ const ToolsPage = () => {
               return (
                 <div
                   key={calc.id}
-                  className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col justify-between hover:border-[#15803D] transition-colors"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setActiveCalculator(calc.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setActiveCalculator(calc.id);
+                    }
+                  }}
+                  className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col justify-between hover:border-[#15803D] hover:shadow-sm transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#15803D]"
+                  aria-label={`Open ${calc.title}`}
                 >
                   <div>
                     <div className="w-10 h-10 rounded-lg bg-[#DCFCE7] text-[#15803D] flex items-center justify-center mb-3">
@@ -540,13 +567,10 @@ const ToolsPage = () => {
                   </div>
 
                   <div className="mt-5 pt-3 border-t border-slate-100">
-                    <button
-                      onClick={() => setActiveCalculator(calc.id)}
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#15803D] hover:text-[#14532D]"
-                    >
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#15803D]">
                       <span>Open Calculator</span>
                       <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
+                    </span>
                   </div>
                 </div>
               );

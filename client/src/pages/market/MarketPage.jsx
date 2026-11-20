@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   TrendingUp,
   Search,
@@ -22,6 +22,7 @@ import {
   getCommodityPrices,
   calculateDistanceKm,
 } from '../../services/marketService.js';
+import { findNearbyAgriculturalPlaces } from '../../services/nearbyPlacesService.js';
 
 const categories = ['All', 'Vegetables', 'Grains & Pulses', 'Commercial Crops', 'Oilseeds', 'Spices'];
 
@@ -33,16 +34,33 @@ const MarketPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMarketId, setSelectedMarketId] = useState(null);
   const [activeView, setActiveView] = useState('split'); // 'split', 'table', 'map'
+  const [discoveredMarkets, setDiscoveredMarkets] = useState([]);
+  const [marketDiscoveryStatus, setMarketDiscoveryStatus] = useState('');
+
+  useEffect(() => {
+    if (latitude == null || longitude == null) { setDiscoveredMarkets([]); setMarketDiscoveryStatus('Enable GPS or choose a location to discover nearby markets.'); return; }
+    let active = true;
+    setMarketDiscoveryStatus('Searching for mapped markets and wholesale places within 30 km…');
+    findNearbyAgriculturalPlaces(latitude, longitude, 30, 'markets')
+      .then((items) => { if (active) { setDiscoveredMarkets(items); setMarketDiscoveryStatus(items.length ? `Found ${items.length} mapped market places. Prices are shown only where a reported market rate is available.` : 'No mapped market places found within 30 km.'); } })
+      .catch(() => { if (active) setMarketDiscoveryStatus('Nearby market discovery is temporarily unavailable.'); });
+    return () => { active = false; };
+  }, [latitude, longitude]);
 
   // Nearby APMC markets sorted by geographical proximity to coordinates
   const apmcMarkets = useMemo(() => {
-    return getMarketsByLocation({ latitude, longitude, state, district });
-  }, [latitude, longitude, state, district]);
+    const curated = getMarketsByLocation({ latitude, longitude, state, district })
+      .filter((market) => latitude == null || longitude == null || market.distance <= 100);
+    const combined = [...curated, ...discoveredMarkets];
+    return combined.filter((item, index, all) => all.findIndex((x) =>
+      (x.id && x.id === item.id) || (x.name || '').toLowerCase() === (item.name || '').toLowerCase()
+    ) === index).sort((a, b) => (a.distance ?? 99999) - (b.distance ?? 99999));
+  }, [latitude, longitude, state, district, discoveredMarkets]);
 
   // Verified Agmarknet prices for user's state / district
   const mandiRatesData = useMemo(() => {
-    return getCommodityPrices({ state, district, cropQuery: searchQuery });
-  }, [state, district, searchQuery]);
+    return getCommodityPrices({ state, district, cropQuery: searchQuery, latitude, longitude });
+  }, [state, district, searchQuery, latitude, longitude]);
 
   const filteredRates = useMemo(() => {
     return mandiRatesData.filter((item) => {
@@ -98,7 +116,7 @@ const MarketPage = () => {
         <div>
           <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#15803D] bg-[#DCFCE7] px-2.5 py-1 rounded-md mb-2">
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>Official APMC Mandi Bulletin (Verified Daily Rates)</span>
+            <span>Latest Available APMC / AGMARKNET Reports</span>
           </div>
           <h1 className="text-2xl font-bold text-[#14532D]">Market Prices</h1>
           <p className="text-sm text-[#64748B] mt-1">
@@ -106,6 +124,8 @@ const MarketPage = () => {
               ? 'Tracking verified modal and range commodity prices across benchmark APMC market yards.'
               : `Tracking verified daily APMC mandi rates, modal price changes, and nearby market yards for ${formattedName}.`}
           </p>
+          {marketDiscoveryStatus && <p className="text-xs text-slate-500 mt-2">{marketDiscoveryStatus}</p>}
+          <p className="text-[10px] text-slate-400 mt-1">Nearby market directory: OpenStreetMap + APMC records. Prices show the latest available reported arrival date, not a live auction feed.</p>
         </div>
 
         {/* View Mode Toggle */}
@@ -202,7 +222,7 @@ const MarketPage = () => {
                 <h2 className="text-lg font-bold text-[#14532D]">Mandi Price Bulletin</h2>
                 <p className="text-[11px] text-[#64748B] flex items-center gap-1 mt-0.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-[#15803D]" />
-                  <span>Verified Daily Market Reports via KSAMB & Agmarknet</span>
+                  <span>Reported wholesale mandi prices · arrival date shown per crop</span>
                 </p>
               </div>
               <span className="text-xs text-[#64748B] font-semibold">{filteredRates.length} Commodities</span>
