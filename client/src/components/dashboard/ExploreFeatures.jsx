@@ -12,7 +12,6 @@ import {
   MapPin,
   BookOpen,
   Warehouse,
-  Bell,
   ArrowRight,
 } from 'lucide-react';
 
@@ -104,14 +103,6 @@ const featureList = [
     icon: Warehouse,
     path: '/my-farm',
     iconColor: 'bg-emerald-100 text-emerald-800',
-  },
-  {
-    id: 'notifications',
-    title: 'Notifications',
-    description: 'Stay updated with important farming alerts and notices.',
-    icon: Bell,
-    path: '/notifications',
-    iconColor: 'bg-rose-100 text-rose-700',
   },
 ];
 

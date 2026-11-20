@@ -88,14 +88,14 @@ const SoilPage = () => {
     }
   }, []);
 
-  // Scientific calculation using ICAR Soil Test Crop Response (STCR) equations
+  // Crop- and soil-test-responsive nutrient estimate
   const calculation = useMemo(() => {
     return calculateFertilizerDose({
       cropKey: targetCrop,
-      nVal: Number(nInput) || 280,
-      pVal: Number(pInput) || 15,
-      kVal: Number(kInput) || 150,
-      phVal: Number(phInput) || 7.0,
+      nVal: Number.isFinite(Number(nInput)) ? Number(nInput) : 280,
+      pVal: Number.isFinite(Number(pInput)) ? Number(pInput) : 15,
+      kVal: Number.isFinite(Number(kInput)) ? Number(kInput) : 150,
+      phVal: Number.isFinite(Number(phInput)) ? Number(phInput) : 7.0,
       areaAcres: Number(areaAcres) || 1,
     });
   }, [targetCrop, nInput, pInput, kInput, phInput, areaAcres]);
@@ -133,11 +133,11 @@ const SoilPage = () => {
         <div>
           <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#15803D] bg-[#DCFCE7] px-2.5 py-1 rounded-md mb-2">
             <Layers className="w-3.5 h-3.5" />
-            <span>ICAR Soil Test Crop Response (STCR) Guidance</span>
+            <span>Soil Test & Crop Nutrient Guidance</span>
           </div>
           <h1 className="text-2xl font-bold text-[#14532D]">Soil & Fertilizers</h1>
           <p className="text-sm text-[#64748B] mt-1">
-            Scientific soil health card calculator, precise commercial fertilizer dosing, and organic biology management for {formattedName}.
+            Soil-test-based nutrient estimates, crop-specific pH suitability, and soil amendment guidance for {formattedName}.
           </p>
         </div>
       </div>
@@ -297,7 +297,7 @@ const SoilPage = () => {
               <p className="text-[11px] text-[#64748B]">For {calculation.areaAcres} Acre(s) holding</p>
             </div>
             <span className="text-xs font-semibold text-[#15803D] bg-[#DCFCE7] px-2.5 py-1 rounded-md">
-              ICAR STCR Equation
+              Indicative estimate
             </span>
           </div>
 
@@ -328,6 +328,10 @@ const SoilPage = () => {
             </div>
           </div>
 
+          <p className="text-[11px] leading-relaxed text-slate-500">
+            {calculation.methodNote}
+          </p>
+
           {/* Organic Manure & Critical Growth Stages */}
           <div className="space-y-3 pt-2 text-xs">
             <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-950">
@@ -341,7 +345,7 @@ const SoilPage = () => {
             </div>
 
             <div className={`p-3 rounded-lg border ${calculation.phStatus.color}`}>
-              <span className="font-bold block mb-0.5">Soil Amendment Advisory:</span>
+              <span className="font-bold block mb-0.5">pH & Crop Suitability ({calculation.phStatus.idealRange} preferred):</span>
               <p>{calculation.phStatus.action}</p>
             </div>
           </div>

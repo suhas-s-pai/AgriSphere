@@ -5,7 +5,6 @@ import ExploreFeatures from '../../components/dashboard/ExploreFeatures.jsx';
 import WeatherPanel from '../../components/dashboard/WeatherPanel.jsx';
 import MarketPricesPanel from '../../components/dashboard/MarketPricesPanel.jsx';
 import RecommendedSection from '../../components/dashboard/RecommendedSection.jsx';
-import RecentAlertsPanel from '../../components/dashboard/RecentAlertsPanel.jsx';
 
 const DashboardPage = () => {
   return (
@@ -38,11 +37,6 @@ const DashboardPage = () => {
       {/* SECTION 6: RECOMMENDATIONS */}
       <section aria-label="Recommendations">
         <RecommendedSection />
-      </section>
-
-      {/* SECTION 7: RECENT NOTIFICATIONS */}
-      <section aria-label="Recent Notifications">
-        <RecentAlertsPanel />
       </section>
     </div>
   );

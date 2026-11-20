@@ -22,6 +22,21 @@ export function calculateDistanceKm(lat1, lon1, lat2, lon2) {
 
 // Master Directory of Verified APMC Markets with exact coordinates
 export const VERIFIED_APMC_MANDIS = [
+  // Karnataka - Dakshina Kannada (Bantwal / Benjanapadavu service area)
+  {
+    id: 'apmc-bantwala',
+    name: 'Bantwala APMC Market Yard',
+    district: 'Dakshina Kannada',
+    state: 'Karnataka',
+    // Approximate Kaikunje / Railway Station Road market-area pin; confirm exact gate before travel.
+    position: [12.8813, 75.0340],
+    address: 'Secretary, APMC Bantwal, Kaikunje, Railway Station Road, B.C. Road, Bantwal, Karnataka 574219',
+    contact: '08255-230688',
+    hours: 'Reported market hours: 09:30 AM - 05:30 PM',
+    majorCommodities: ['Arecanut', 'Coconut', 'Copra', 'Paddy', 'Rice', 'Black Pepper'],
+    description: 'Regulated APMC market serving Bantwal and surrounding villages in Dakshina Kannada.',
+    reportDate: 'Market directory listing',
+  },
   // Karnataka - Belagavi Division
   {
     id: 'apmc-belagavi-main',
@@ -148,6 +163,159 @@ export const VERIFIED_APMC_MANDIS = [
 
 // Verified Agmarknet Commodity Price Data
 export const VERIFIED_COMMODITY_PRICES = [
+  // Latest available Bantwala APMC reports sourced from AGMARKNET (arrival dates shown per commodity).
+  {
+    id: 'price-arecanut-bantwala-cqca',
+    crop: 'Arecanut (Cqca, Local)',
+    category: 'Commercial Crops',
+    marketId: 'apmc-bantwala',
+    marketName: 'Bantwala APMC',
+    district: 'Dakshina Kannada',
+    state: 'Karnataka',
+    modalPrice: '₹28,100 / qtl',
+    modalPriceNum: 28100,
+    perKg: '₹281.00 / kg',
+    minMax: '₹18,000 - ₹30,000',
+    unit: '₹ / Quintal',
+    change: 'Latest reported',
+    trend: 'flat',
+    arrivals: 'Not reported',
+    date: 'Nov 18, 2026',
+    status: 'AGMARKNET reported rate',
+  },
+  {
+    id: 'price-arecanut-bantwala-old',
+    crop: 'Arecanut (Old Variety)',
+    category: 'Commercial Crops',
+    marketId: 'apmc-bantwala',
+    marketName: 'Bantwala APMC',
+    district: 'Dakshina Kannada',
+    state: 'Karnataka',
+    modalPrice: '₹40,200 / qtl',
+    modalPriceNum: 40200,
+    perKg: '₹402.00 / kg',
+    minMax: '₹36,000 - ₹56,000',
+    unit: '₹ / Quintal',
+    change: 'Latest reported',
+    trend: 'flat',
+    arrivals: 'Not reported',
+    date: 'Nov 18, 2026',
+    status: 'AGMARKNET reported rate',
+  },
+  {
+    id: 'price-arecanut-bantwala-new',
+    crop: 'Arecanut (New Variety)',
+    category: 'Commercial Crops',
+    marketId: 'apmc-bantwala',
+    marketName: 'Bantwala APMC',
+    district: 'Dakshina Kannada',
+    state: 'Karnataka',
+    modalPrice: '₹33,000 / qtl',
+    modalPriceNum: 33000,
+    perKg: '₹330.00 / kg',
+    minMax: '₹30,000 - ₹36,000',
+    unit: '₹ / Quintal',
+    change: 'Latest reported',
+    trend: 'flat',
+    arrivals: 'Not reported',
+    date: 'Nov 18, 2026',
+    status: 'AGMARKNET reported rate',
+  },
+  {
+    id: 'price-coconut-bantwala',
+    crop: 'Coconut (Small)',
+    category: 'Commercial Crops',
+    marketId: 'apmc-bantwala',
+    marketName: 'Bantwala APMC',
+    district: 'Dakshina Kannada',
+    state: 'Karnataka',
+    modalPrice: '₹26,800 / qtl',
+    modalPriceNum: 26800,
+    perKg: '₹268.00 / kg',
+    minMax: '₹25,000 - ₹30,000',
+    unit: '₹ / Quintal',
+    change: 'Latest reported',
+    trend: 'up',
+    arrivals: 'Not reported',
+    date: 'Nov 18, 2026',
+    status: 'AGMARKNET reported rate',
+  },
+  {
+    id: 'price-copra-bantwala',
+    crop: 'Copra',
+    category: 'Commercial Crops',
+    marketId: 'apmc-bantwala',
+    marketName: 'Bantwala APMC',
+    district: 'Dakshina Kannada',
+    state: 'Karnataka',
+    modalPrice: '₹13,500 / qtl',
+    modalPriceNum: 13500,
+    perKg: '₹135.00 / kg',
+    minMax: '₹12,500 - ₹15,000',
+    unit: '₹ / Quintal',
+    change: 'Latest reported',
+    trend: 'down',
+    arrivals: 'Not reported',
+    date: 'Nov 18, 2026',
+    status: 'AGMARKNET reported rate',
+  },
+  {
+    id: 'price-rice-bantwala',
+    crop: 'Rice (Local)',
+    category: 'Grains & Pulses',
+    marketId: 'apmc-bantwala',
+    marketName: 'Bantwala APMC',
+    district: 'Dakshina Kannada',
+    state: 'Karnataka',
+    modalPrice: '₹2,900 / qtl',
+    modalPriceNum: 2900,
+    perKg: '₹29.00 / kg',
+    minMax: '₹2,000 - ₹3,500',
+    unit: '₹ / Quintal',
+    change: 'No reported change',
+    trend: 'flat',
+    arrivals: 'Not reported',
+    date: 'Nov 18, 2026',
+    status: 'AGMARKNET reported rate',
+  },
+  {
+    id: 'price-paddy-bantwala',
+    crop: 'Paddy (Common)',
+    category: 'Grains & Pulses',
+    marketId: 'apmc-bantwala',
+    marketName: 'Bantwala APMC',
+    district: 'Dakshina Kannada',
+    state: 'Karnataka',
+    modalPrice: '₹2,500 / qtl',
+    modalPriceNum: 2500,
+    perKg: '₹25.00 / kg',
+    minMax: '₹2,400 - ₹2,600',
+    unit: '₹ / Quintal',
+    change: 'Latest reported',
+    trend: 'flat',
+    arrivals: 'Not reported',
+    date: 'Nov 16, 2026',
+    status: 'AGMARKNET reported rate',
+  },
+  {
+    id: 'price-black-pepper-bantwala',
+    crop: 'Black Pepper',
+    category: 'Spices',
+    marketId: 'apmc-bantwala',
+    marketName: 'Bantwala APMC',
+    district: 'Dakshina Kannada',
+    state: 'Karnataka',
+    modalPrice: '₹74,400 / qtl',
+    modalPriceNum: 74400,
+    perKg: '₹744.00 / kg',
+    minMax: '₹70,000 - ₹75,000',
+    unit: '₹ / Quintal',
+    change: 'Latest reported',
+    trend: 'up',
+    arrivals: 'Not reported',
+    date: 'Nov 17, 2026',
+    status: 'AGMARKNET reported rate',
+  },
   {
     id: 'price-tomato-belagavi',
     crop: 'Tomato (Local Hybrid)',
@@ -375,23 +543,35 @@ export function getMarketsByLocation({ latitude, longitude, state, district }) {
 /**
  * Filter commodity prices based on active location
  */
-export function getCommodityPrices({ state, district, cropQuery }) {
+export function getCommodityPrices({ state, district, cropQuery, latitude, longitude }) {
   let prices = [...VERIFIED_COMMODITY_PRICES];
 
-  if (district) {
-    const matchingDistrict = prices.filter(
-      (p) => p.district.toLowerCase() === district.toLowerCase()
+  // Prefer geographic proximity when GPS or a geocoded manual location is available.
+  if (latitude != null && longitude != null) {
+    const nearbyMarketIds = new Set(
+      getMarketsByLocation({ latitude, longitude })
+        .filter((market) => market.distance != null && market.distance <= 100)
+        .map((market) => market.id)
     );
-    if (matchingDistrict.length > 0) {
-      prices = matchingDistrict;
+    if (nearbyMarketIds.size) {
+      prices = prices.filter((price) => nearbyMarketIds.has(price.marketId));
     }
-  } else if (state) {
+  }
+
+  if (district && !(latitude != null && longitude != null && prices.some((price) => price.district.toLowerCase() === 'dakshina kannada'))) {
+    const normalizedDistrict = district.toLowerCase();
+    const isDakshinaKannada = ['dakshina kannada', 'dakshin kannada', 'bantwal', 'bantwala'].includes(normalizedDistrict);
+    const matchingDistrict = prices.filter((p) =>
+      isDakshinaKannada
+        ? p.district.toLowerCase() === 'dakshina kannada'
+        : p.district.toLowerCase() === normalizedDistrict
+    );
+    prices = matchingDistrict;
+  } else if (state && !(latitude != null && longitude != null && prices.length)) {
     const matchingState = prices.filter(
       (p) => p.state.toLowerCase() === state.toLowerCase()
     );
-    if (matchingState.length > 0) {
-      prices = matchingState;
-    }
+    prices = matchingState;
   }
 
   if (cropQuery && cropQuery.trim()) {
