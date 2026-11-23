@@ -21,6 +21,9 @@ import FarmPage from './pages/farm/FarmPage.jsx';
 import NotificationsPage from './pages/notifications/NotificationsPage.jsx';
 import HelpPage from './pages/help/HelpPage.jsx';
 import ChatbotPage from './pages/chatbot/ChatbotPage.jsx';
+import LoginPage from './pages/auth/LoginPage.jsx';
+import SignupPage from './pages/auth/SignupPage.jsx';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.jsx';
 
 function App() {
   return (
@@ -30,15 +33,50 @@ function App() {
           <CartProvider>
             <AuthModal />
             <Router>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <ErrorBoundary title="AgriSphere Layout Error">
-                  <MainLayout />
-                </ErrorBoundary>
-              }
-            >
+              <Routes>
+                {/* Standalone Agricultural Auth Pages */}
+                <Route
+                  path="/login"
+                  element={
+                    <ErrorBoundary title="Login Error">
+                      <LoginPage />
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
+                  path="/signup"
+                  element={
+                    <ErrorBoundary title="Signup Error">
+                      <SignupPage />
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
+                  path="/register"
+                  element={
+                    <ErrorBoundary title="Signup Error">
+                      <SignupPage />
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
+                  path="/forgot-password"
+                  element={
+                    <ErrorBoundary title="Password Recovery Error">
+                      <ForgotPasswordPage />
+                    </ErrorBoundary>
+                  }
+                />
+
+                {/* Main Application with Sidebar & Header Layout */}
+                <Route
+                  path="/"
+                  element={
+                    <ErrorBoundary title="AgriSphere Layout Error">
+                      <MainLayout />
+                    </ErrorBoundary>
+                  }
+                >
               <Route index element={<ErrorBoundary title="Dashboard Error"><DashboardPage /></ErrorBoundary>} />
               <Route path="dashboard" element={<ErrorBoundary title="Dashboard Error"><DashboardPage /></ErrorBoundary>} />
               <Route path="crops" element={<ErrorBoundary title="Crop Guide Error"><CropsPage /></ErrorBoundary>} />

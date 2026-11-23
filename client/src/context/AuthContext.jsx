@@ -121,6 +121,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const forgotPassword = async (email) => {
+    setLoading(true);
+    try {
+      const res = await authApi.forgotPassword({ email });
+      return { success: true, message: res?.data?.message || 'Password reset instructions have been sent.' };
+    } catch (error) {
+      const msg = error?.response?.data?.message || 'Failed to send password reset request. Please check the email address.';
+      return { success: false, message: msg };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -209,6 +222,7 @@ export const AuthProvider = ({ children }) => {
     closeAuthModal,
     login,
     register,
+    forgotPassword,
     logout,
     upgradeToSeller,
     updateSellerProfile,

@@ -166,6 +166,19 @@
       "pincode": "590001",
       "created_at": "2026-11-20T15:01:06.164Z",
       "updated_at": "2026-11-20T15:01:06.164Z"
+    },
+    {
+      "id": "836266ec-a454-49aa-9f46-53dd9ee816a8",
+      "full_name": "Shravya Naik",
+      "email": "shravyanaik1832@gmail.com",
+      "mobile_number": null,
+      "password_hash": "$2b$10$yOPbcmefmbqn0XXMPNyjRuz.gU8Y6B4QCMnajYqcwt1orjJbkvhma",
+      "role": "farmer",
+      "district": "Belagavi",
+      "state": "Karnataka",
+      "pincode": "590001",
+      "created_at": "2026-11-23T17:46:57.779Z",
+      "updated_at": "2026-11-23T17:46:57.779Z"
     }
   ],
   "seller_profiles": [
@@ -312,6 +325,30 @@
       "bank_ifsc": null,
       "created_at": "2026-11-20T15:01:06.095Z",
       "updated_at": "2026-11-20T15:01:06.095Z"
+    },
+    {
+      "id": "98e8d560-641e-4a69-9773-075c40738c5a",
+      "user_id": "836266ec-a454-49aa-9f46-53dd9ee816a8",
+      "seller_type": "farmer",
+      "business_name": "Shravya Naik's Organic Farm",
+      "contact_number": null,
+      "email": "shravyanaik1832@gmail.com",
+      "address": "Belagavi, Karnataka",
+      "village": null,
+      "taluk": null,
+      "district": "Belagavi",
+      "state": "Karnataka",
+      "pincode": "590001",
+      "latitude": null,
+      "longitude": null,
+      "gstin": null,
+      "verification_status": "pending",
+      "verification_notes": null,
+      "is_verified_badge": false,
+      "bank_account_number": null,
+      "bank_ifsc": null,
+      "created_at": "2026-11-23T17:46:57.780Z",
+      "updated_at": "2026-11-23T17:46:57.780Z"
     }
   ],
   "seller_verification_documents": [

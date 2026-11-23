@@ -51,6 +51,7 @@ export const authApi = {
   login: (credentials) => apiClient.post('/auth/login', credentials),
   getMe: () => apiClient.get('/auth/me'),
   upgradeToSeller: (sellerData) => apiClient.post('/auth/upgrade-to-seller', sellerData),
+  forgotPassword: (data) => apiClient.post('/auth/forgot-password', data),
 };
 
 // Seller Profile Endpoints

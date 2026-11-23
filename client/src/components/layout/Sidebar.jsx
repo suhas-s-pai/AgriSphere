@@ -17,8 +17,10 @@ import {
   HelpCircle,
   PanelLeftClose,
   PanelLeftOpen,
+  LogIn,
 } from 'lucide-react';
 import { useLocationContext } from '../../context/LocationContext.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 const navSections = [
   {
@@ -58,6 +60,7 @@ const bottomNavItems = [
 const Sidebar = ({ isMobileOpen, onCloseMobile, isCollapsed, onToggleCollapse }) => {
   const location = useLocation();
   const { city, district } = useLocationContext();
+  const { user, isAuthenticated } = useAuth();
 
   const handleToggle = () => {
     if (isMobileOpen && onCloseMobile) {
@@ -202,24 +205,55 @@ const Sidebar = ({ isMobileOpen, onCloseMobile, isCollapsed, onToggleCollapse })
             );
           })}
 
-          {/* Farmer Profile Card */}
-          <div
-            className={`pt-2 mt-2 border-t border-slate-200 flex items-center ${
-              isCollapsed ? 'justify-center' : 'gap-3 px-2'
-            }`}
-          >
-            <div className="w-8 h-8 rounded-full bg-[#15803D] text-white font-semibold text-xs flex items-center justify-center shrink-0 shadow-xs">
-              RP
-            </div>
-            {!isCollapsed && (
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-[#1F2937] truncate">Ramesh Patil</p>
-                <p className="text-[11px] text-[#64748B] truncate">
-                  {city || district ? `${city || district} Farmer` : 'Progressive Farmer'}
-                </p>
+          {/* Farmer Profile / Sign In Link Card */}
+          {isAuthenticated && user ? (
+            <NavLink
+              to="/my-farm"
+              onClick={onCloseMobile}
+              className={`pt-2 mt-2 border-t border-slate-200 flex items-center hover:bg-slate-50 rounded-lg transition-colors ${
+                isCollapsed ? 'justify-center p-1' : 'gap-3 px-2 py-1.5'
+              }`}
+              title={user.full_name || 'Farmer Profile'}
+            >
+              <div className="w-8 h-8 rounded-full bg-[#15803D] text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+                {user.full_name
+                  ? user.full_name
+                      .split(' ')
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join('')
+                      .toUpperCase()
+                  : 'FP'}
               </div>
-            )}
-          </div>
+              {!isCollapsed && (
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-[#1F2937] truncate">{user.full_name}</p>
+                  <p className="text-[11px] text-[#64748B] truncate">
+                    {user.district ? `${user.district} Farmer` : (city || district ? `${city || district} Farmer` : 'Progressive Farmer')}
+                  </p>
+                </div>
+              )}
+            </NavLink>
+          ) : (
+            <NavLink
+              to="/login"
+              onClick={onCloseMobile}
+              className={`pt-2 mt-2 border-t border-slate-200 flex items-center text-[#15803D] hover:bg-emerald-50/70 rounded-lg transition-colors ${
+                isCollapsed ? 'justify-center p-1' : 'gap-2.5 px-2 py-1.5'
+              }`}
+              title="Farmer Sign In"
+            >
+              <div className="w-8 h-8 rounded-full bg-emerald-100 text-[#15803D] font-bold text-xs flex items-center justify-center shrink-0">
+                <LogIn className="w-4 h-4" />
+              </div>
+              {!isCollapsed && (
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-[#14532D] truncate">Farmer Sign In</p>
+                  <p className="text-[10px] text-[#64748B] truncate">Login / Register</p>
+                </div>
+              )}
+            </NavLink>
+          )}
         </div>
       </aside>
     </>

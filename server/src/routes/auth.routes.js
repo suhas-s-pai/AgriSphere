@@ -277,4 +277,41 @@ router.post('/upgrade-to-seller', authenticateToken, (req, res) => {
   }
 });
 
+/**
+ * POST /api/v1/auth/forgot-password
+ * Request password recovery instructions for registered email
+ */
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Please provide a valid registered email address.',
+      });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const user = marketplaceStore.findUserByEmailOrPhone(cleanEmail);
+
+    // Note: Ready for future Supabase Authentication dispatch:
+    // await supabase.auth.resetPasswordForEmail(cleanEmail, { redirectTo: `${CLIENT_URL}/reset-password` });
+
+    return res.status(200).json({
+      status: 'success',
+      message: `Password reset instructions have been dispatched to ${cleanEmail}.`,
+      data: {
+        email: cleanEmail,
+        userExists: Boolean(user),
+      },
+    });
+  } catch (error) {
+    console.error('[AUTH FORGOT PASSWORD ERROR]', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Password reset request failed due to a server error.',
+    });
+  }
+});
+
 export default router;

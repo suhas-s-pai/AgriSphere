@@ -13,8 +13,13 @@ import {
   Loader2,
   AlertTriangle,
   Globe,
+  LogIn,
+  UserPlus,
+  LogOut,
+  User,
 } from 'lucide-react';
 import { useLocationContext } from '../../context/LocationContext.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 const routeTitles = {
   '/': 'Dashboard',
@@ -133,6 +138,9 @@ const Header = ({ onToggleMobileSidebar }) => {
     searchLocations,
     presetRegions,
   } = useLocationContext();
+
+  const { user, isAuthenticated, logout } = useAuth();
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
   const [headerSearchQuery, setHeaderSearchQuery] = useState('');
@@ -563,20 +571,86 @@ const Header = ({ onToggleMobileSidebar }) => {
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
         </Link>
 
-        {/* Farmer Profile */}
-        <Link
-          to="/my-farm"
-          className="flex items-center gap-2 pl-2 border-l border-slate-200 hover:opacity-85 transition-opacity"
-          title="View profile"
-        >
-          <div className="w-8 h-8 rounded-full bg-[#15803D] text-white font-semibold text-xs flex items-center justify-center">
-            RP
-          </div>
+        {/* Farmer Profile / Authentication Controls */}
+        {isAuthenticated && user ? (
+          <div className="relative">
+            <button
+              onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+              className="flex items-center gap-2 pl-2 border-l border-slate-200 hover:opacity-90 transition-opacity cursor-pointer"
+              title="Farmer Profile & Account"
+            >
+              <div className="w-8 h-8 rounded-full bg-[#15803D] text-white font-bold text-xs flex items-center justify-center shadow-xs">
+                {user.full_name
+                  ? user.full_name
+                      .split(' ')
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join('')
+                      .toUpperCase()
+                  : 'FP'}
+              </div>
 
-          <span className="text-xs font-medium text-[#1F2937] hidden sm:block">
-            Ramesh Patil
-          </span>
-        </Link>
+              <div className="hidden sm:block text-left">
+                <span className="text-xs font-bold text-[#1F2937] block leading-tight truncate max-w-[120px]">
+                  {user.full_name || 'Farmer'}
+                </span>
+                <span className="text-[10px] text-[#64748B] capitalize block leading-none">
+                  {user.role || 'Farmer'}
+                </span>
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block" />
+            </button>
+
+            {isProfileMenuOpen && (
+              <div
+                className="absolute right-0 mt-2 w-52 rounded-2xl bg-white border border-slate-200 shadow-xl py-1.5 z-50 text-xs animate-in fade-in slide-in-from-top-1"
+                onClick={() => setIsProfileMenuOpen(false)}
+              >
+                <div className="px-3.5 py-2.5 border-b border-slate-100 bg-slate-50/60 rounded-t-xl">
+                  <p className="font-bold text-slate-800 truncate">{user.full_name}</p>
+                  <p className="text-[11px] text-slate-500 truncate">{user.email || user.mobile_number}</p>
+                  <span className="inline-block mt-1 text-[9px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded">
+                    {user.role || 'Farmer'} Account
+                  </span>
+                </div>
+                <Link
+                  to="/my-farm"
+                  className="flex items-center gap-2.5 px-3.5 py-2.5 text-slate-700 hover:bg-slate-50 hover:text-[#15803D] transition font-medium"
+                >
+                  <User className="w-4 h-4 text-slate-400" />
+                  <span>My Farm Records</span>
+                </Link>
+                <div className="border-t border-slate-100 my-1" />
+                <button
+                  onClick={logout}
+                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-red-600 hover:bg-red-50 transition font-medium text-left"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
+            <Link
+              to="/login"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-600/30 bg-emerald-50/60 hover:bg-emerald-100/70 text-[#15803D] text-xs font-bold transition shadow-2xs"
+              title="Sign in with your farmer account"
+            >
+              <LogIn className="w-3.5 h-3.5 text-[#15803D]" />
+              <span>Sign In</span>
+            </Link>
+            <Link
+              to="/signup"
+              className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#15803D] hover:bg-[#14532D] text-white text-xs font-bold transition shadow-xs"
+              title="Create a free farmer account"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>Register</span>
+            </Link>
+          </div>
+        )}
       </div>
     </header>
   );
